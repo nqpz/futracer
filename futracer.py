@@ -35,19 +35,19 @@ class FutRacer:
         self.screen.blit(text, where)
 
     def loop(self):
-        # t = [-40.0, 40.0, 0.0,
-        #      300.0, 40.0, 0.6,
-        #      400.0, 500.0, 0.9]
-        t = [-40.0, 40.0, 0.0,
-             300.0, 40.0, 0.6,
-             400.0, 500.0, 0.9]
+        t = [40.0, 40.0, 20.0,
+             300.0, 40.0, 200.6,
+             400.0, 500.0, 600.9]
 
+        
+        
         frame = numpy.empty(self.size, dtype=numpy.uint32)
         while True:
             fps = self.clock.get_fps()
 
             frame.fill(0)
-            t[0] += 1.2
+            t[2] += 1.2
+            t[8] -= 1.2
             frame = self.futhark.test(frame, *t).get()
             pygame.surfarray.blit_array(self.screen, frame)
             pygame.display.flip()

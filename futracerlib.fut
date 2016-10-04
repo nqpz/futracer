@@ -121,12 +121,25 @@ fun bound (max : i32) (t : i32) : i32 =
   I32.min (max - 1) (I32.max 0 t)
   
 fun project_point
+  (w : i32) (h : i32)
   (camera : camera)
   ((x, y, z) : F32.D3.point)
   : I32.D2.point =
   let ((xc, yc, zc), (ax, ay, az)) = camera
-  let t = 1.0 - z
-  in (i32 (x * t), i32 (y * t))
+  let view_dist = 600.0
+  let z_ratio = (view_dist + z) / view_dist
+
+  let w_half = f32 w / 2.0
+  let h_half = f32 h / 2.0
+  let x_norm = x - w_half
+  let y_norm = y - h_half
+
+  let x_norm_projected = x_norm / z_ratio
+  let y_norm_projected = y_norm / z_ratio
+  let x_projected = x_norm_projected + w_half
+  let y_projected = y_norm_projected + h_half
+  
+  in (i32 x_projected, i32 y_projected)
 
 fun in_range (t : i32) (a : i32) (b : i32) : bool =
   (a < b && a <= t && t <= b) || (b <= a && b <= t && t <= a)
@@ -151,6 +164,9 @@ fun is_inside_triangle
   : bool =
   in_range a 0 factor && in_range b 0 factor && in_range c 0 factor
 
+fun is_in_front_of_camera (z : f32) : bool =
+  z >= 0.0
+
 fun interpolate_z
   (triangle : triangle_projected)
   ((_factor, (_a, _b, _c), (an, bn, cn)) : point_barycentric)
@@ -164,9 +180,9 @@ fun render_triangle
   (frame : *[w][h]pixel)
   : [w][h]pixel =
   let ((x0, y0, z0), (x1, y1, z1), (x2, y2, z2)) = triangle
-  let (xp0, yp0) = project_point camera (x0, y0, z0)
-  let (xp1, yp1) = project_point camera (x1, y1, z1)
-  let (xp2, yp2) = project_point camera (x2, y2, z2)
+  let (xp0, yp0) = project_point w h camera (x0, y0, z0)
+  let (xp1, yp1) = project_point w h camera (x1, y1, z1)
+  let (xp2, yp2) = project_point w h camera (x2, y2, z2)
   let triangle_projected = ((xp0, yp0, z0), (xp1, yp1, z1), (xp2, yp2, z2))
 
   let x_min = bound w (I32.min3 xp0 xp1 xp2)
@@ -192,24 +208,26 @@ fun render_triangle
 
   let barys = map (barycentric_coordinates triangle_projected)
                   bbox_coordinates
-  let mask = map is_inside_triangle barys
   let z_values = map (interpolate_z triangle_projected)
                      barys
+  let mask0 = map is_inside_triangle barys
+  let mask1 = map is_in_front_of_camera z_values
+  let mask = zipWith (&&) mask0 mask1
 
   let (write_indices, write_values) =
     unzip (zipWith (fn (index : i32)
-                       (inside : bool)
                        (z : f32)
+                       (inside : bool)
                        : (i32, pixel) =>
                       if inside
                       then let h = 120.0
                            let s = 0.8
-                           let v = 1.0 - z
+                           let v = F32.min 1.0 (1.0 / (z * 0.05))
                            let rgb = hsv_to_rgb (h, s, v)
                            let pixel = rgb_to_pixel rgb
                            in (index, pixel)
                       else (-1, 0u32))
-                   bbox_indices mask z_values)
+                   bbox_indices z_values mask)
   let pixels = reshape (w * h) frame
   let pixels' = write write_indices write_values pixels
   let frame' = reshape (w, h) pixels'
