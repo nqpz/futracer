@@ -71,9 +71,25 @@ class FutRacer:
 
             cube = [[self.rotate_point((0.0, 0.01, 0.0), origo, p) for p in t]
                     for t in cube]
-            for t in cube:
-                t = list(itertools.chain(*t))
-                frame = self.futhark.test(frame, *t).get()
+
+            p0s = [t[0] for t in cube]
+            p1s = [t[1] for t in cube]
+            p2s = [t[2] for t in cube]
+
+            x0s = numpy.array([p[0] for p in p0s])
+            y0s = numpy.array([p[1] for p in p0s])
+            z0s = numpy.array([p[2] for p in p0s])
+
+            x1s = numpy.array([p[0] for p in p1s])
+            y1s = numpy.array([p[1] for p in p1s])
+            z1s = numpy.array([p[2] for p in p1s])
+
+            x2s = numpy.array([p[0] for p in p2s])
+            y2s = numpy.array([p[1] for p in p2s])
+            z2s = numpy.array([p[2] for p in p2s])
+            
+            frame = self.futhark.render_triangles_raw(
+                frame, x0s, y0s, z0s, x1s, y1s, z1s, x2s, y2s, z2s).get()
 
             pygame.surfarray.blit_array(self.screen, frame)
             pygame.display.flip()
