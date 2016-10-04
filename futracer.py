@@ -3,6 +3,7 @@
 import sys
 import argparse
 import collections
+import itertools
 import time
 
 import pygame
@@ -35,19 +36,27 @@ class FutRacer:
         self.screen.blit(text, where)
 
     def loop(self):
-        t = [40.0, 40.0, 20.0,
-             300.0, 40.0, 200.6,
-             400.0, 500.0, 600.9]
+        triangle = [(200.0, 100.0, 500.0),
+                    (600.0, 100.0, 500.0),
+                    (400.0, 500.0, 500.0)]
 
-        
+        def rotate_point(angles, origo, point):
+            args = angles + origo + point
+            return self.futhark.rotate_point_raw(*args)
         
         frame = numpy.empty(self.size, dtype=numpy.uint32)
         while True:
             fps = self.clock.get_fps()
 
             frame.fill(0)
-            t[2] += 1.2
-            t[8] -= 1.2
+
+            origo = (400.0, 300.0, 500.0)
+            angles = (0.01, 0.005, 0.0025)
+            triangle = [rotate_point(angles, origo, point)
+                        for point in triangle]
+            t = list(itertools.chain(*triangle))
+            print(t)
+            
             frame = self.futhark.test(frame, *t).get()
             pygame.surfarray.blit_array(self.screen, frame)
             pygame.display.flip()
