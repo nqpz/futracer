@@ -3,6 +3,7 @@
 import sys
 import argparse
 import collections
+import math
 import itertools
 import time
 
@@ -34,15 +35,27 @@ class FutRacer:
     def message(self, what, where):
         text = self.font.render(what, 1, (255, 255, 255))
         self.screen.blit(text, where)
+        
+    def rotate_point(self, angles, origo, point):
+        args = angles + origo + point
+        return self.futhark.rotate_point_raw(*args)
 
     def loop(self):
         triangle = [(200.0, 100.0, 500.0),
                     (600.0, 100.0, 500.0),
                     (400.0, 500.0, 500.0)]
 
-        def rotate_point(angles, origo, point):
-            args = angles + origo + point
-            return self.futhark.rotate_point_raw(*args)
+        t0 = [(200.0, 100.0, 100.0),
+              (200.0, 300.0, 100.0),
+              (400.0, 100.0, 100.0)]
+        t1 = [(400.0, 100.0, 100.0),
+              (400.0, 300.0, 100.0),
+              (200.0, 300.0, 100.0)]
+        origo = (300.0, 200.0, 200.0)
+        s0 = [t0, t1]
+        s1 = [[self.rotate_point((0.0, math.pi / 2, 0.0), origo, p) for p in t]
+              for t in s0]
+        cube = s0 + s1
         
         frame = numpy.empty(self.size, dtype=numpy.uint32)
         while True:
@@ -50,14 +63,18 @@ class FutRacer:
 
             frame.fill(0)
 
-            origo = (400.0, 300.0, 500.0)
-            angles = (0.01, 0.005, 0.0025)
-            triangle = [rotate_point(angles, origo, point)
-                        for point in triangle]
-            t = list(itertools.chain(*triangle))
-            print(t)
-            
-            frame = self.futhark.test(frame, *t).get()
+            # origo = (400.0, 300.0, 500.0)
+            # angles = (0.01, 0.005, 0.0025)
+            # triangle = [self.rotate_point(angles, origo, point)
+            #             for point in triangle]
+            # t = list(itertools.chain(*triangle))
+
+            cube = [[self.rotate_point((0.0, 0.01, 0.0), origo, p) for p in t]
+                    for t in cube]
+            for t in cube:
+                t = list(itertools.chain(*t))
+                frame = self.futhark.test(frame, *t).get()
+
             pygame.surfarray.blit_array(self.screen, frame)
             pygame.display.flip()
 
