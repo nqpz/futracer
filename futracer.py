@@ -41,21 +41,19 @@ class FutRacer:
         return self.futhark.rotate_point_raw(*args)
 
     def loop(self):
-        triangle = [(200.0, 100.0, 500.0),
-                    (600.0, 100.0, 500.0),
-                    (400.0, 500.0, 500.0)]
-
-        t0 = [(200.0, 100.0, 100.0),
-              (200.0, 300.0, 100.0),
-              (400.0, 100.0, 100.0)]
-        t1 = [(400.0, 100.0, 100.0),
-              (400.0, 300.0, 100.0),
-              (200.0, 300.0, 100.0)]
-        origo = (300.0, 200.0, 200.0)
+        t0 = [(200.0, 100.0, 200.0),
+              (200.0, 300.0, 200.0),
+              (400.0, 100.0, 200.0)]
+        t1 = [(400.0, 100.0, 200.0),
+              (400.0, 300.0, 200.0),
+              (200.0, 300.0, 200.0)]
+        origo = (300.0, 200.0, 300.0)
         s0 = [t0, t1]
         s1 = [[self.rotate_point((0.0, math.pi / 2, 0.0), origo, p) for p in t]
               for t in s0]
-        cube = s0 + s1
+        s2 = [[self.rotate_point((math.pi / 2, 0.0, 0.0), origo, p) for p in t]
+              for t in s0]
+        half_cube = s0 + s1 + s2
         
         frame = numpy.empty(self.size, dtype=numpy.uint32)
         while True:
@@ -63,18 +61,12 @@ class FutRacer:
 
             frame.fill(0)
 
-            # origo = (400.0, 300.0, 500.0)
-            # angles = (0.01, 0.005, 0.0025)
-            # triangle = [self.rotate_point(angles, origo, point)
-            #             for point in triangle]
-            # t = list(itertools.chain(*triangle))
+            half_cube = [[self.rotate_point((0.012, 0.011, 0.013), origo, p) for p in t]
+                         for t in half_cube]
 
-            cube = [[self.rotate_point((0.0, 0.01, 0.0), origo, p) for p in t]
-                    for t in cube]
-
-            p0s = [t[0] for t in cube]
-            p1s = [t[1] for t in cube]
-            p2s = [t[2] for t in cube]
+            p0s = [t[0] for t in half_cube]
+            p1s = [t[1] for t in half_cube]
+            p2s = [t[2] for t in half_cube]
 
             x0s = numpy.array([p[0] for p in p0s])
             y0s = numpy.array([p[1] for p in p0s])
