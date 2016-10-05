@@ -35,7 +35,7 @@ class FutRacer:
     def message(self, what, where):
         text = self.font.render(what, 1, (255, 255, 255))
         self.screen.blit(text, where)
-        
+
     def rotate_point(self, angles, origo, point):
         args = angles + origo + point
         return self.futhark.rotate_point_raw(*args)
@@ -54,14 +54,14 @@ class FutRacer:
         s2 = [[self.rotate_point((math.pi / 2, 0.0, 0.0), origo, p) for p in t]
               for t in s0]
         half_cube = s0 + s1 + s2
-        
+
         frame = numpy.empty(self.size, dtype=numpy.uint32)
         while True:
             fps = self.clock.get_fps()
 
             frame.fill(0)
 
-            half_cube = [[self.rotate_point((0.012, 0.011, 0.013), origo, p) for p in t]
+            half_cube = [[self.rotate_point((0.005, 0.01, 0.001), origo, p) for p in t]
                          for t in half_cube]
 
             p0s = [t[0] for t in half_cube]
@@ -79,7 +79,7 @@ class FutRacer:
             x2s = numpy.array([p[0] for p in p2s])
             y2s = numpy.array([p[1] for p in p2s])
             z2s = numpy.array([p[2] for p in p2s])
-            
+
             frame = self.futhark.render_triangles_raw(
                 frame, x0s, y0s, z0s, x1s, y1s, z1s, x2s, y2s, z2s).get()
 

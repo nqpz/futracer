@@ -11,12 +11,12 @@ struct F32 {
     type point = (t, t, t)
     type angles = (t, t, t)
   }
-  
+
   fun min (a : t) (b : t) : t =
     if a < b
     then a
     else b
-  
+
   fun max (a : t) (b : t) : t =
     if a > b
     then a
@@ -53,12 +53,12 @@ struct I32 {
     let factor_then = (signum (b - a) + 1) / 2
     let factor_else = (signum (a - b) + 1) / 2 + signum (a - b) * signum (b - a) + 1
     in case_then * factor_then + case_else * factor_else
-  
+
   fun min (a : t) (b : t) : t =
-    _signum_if_lt a b a b 
-  
+    _signum_if_lt a b a b
+
   fun max (a : t) (b : t) : t =
-    _signum_if_lt b a a b 
+    _signum_if_lt b a a b
 
   fun min3 (a : t) (b : t) (c : t) : t =
     min (min a b) c
@@ -119,7 +119,7 @@ fun ceil (t : f32) : i32 =
 
 fun bound (max : i32) (t : i32) : i32 =
   I32.min (max - 1) (I32.max 0 t)
-  
+
 fun project_point
   (w : i32) (h : i32)
   (camera : camera)
@@ -138,7 +138,7 @@ fun project_point
   let y_norm_projected = y_norm / z_ratio
   let x_projected = x_norm_projected + w_half
   let y_projected = y_norm_projected + h_half
-  
+
   in (i32 x_projected, i32 y_projected)
 
 fun project_triangle
@@ -152,10 +152,10 @@ fun project_triangle
   let (xp2, yp2) = project_point w h camera (x2, y2, z2)
   let triangle_projected = ((xp0, yp0, z0), (xp1, yp1, z1), (xp2, yp2, z2))
   in triangle_projected
-  
+
 fun in_range (t : i32) (a : i32) (b : i32) : bool =
   (a < b && a <= t && t <= b) || (b <= a && b <= t && t <= a)
-  
+
 fun barycentric_coordinates
   ((x, y) : I32.D2.point)
   (triangle : triangle_projected)
@@ -206,16 +206,16 @@ fun render_triangles
 
   let triangles_projected = map (project_triangle w h camera)
                                 triangles
-        
+
   let baryss = map (fn (p : I32.D2.point) : [tn]point_barycentric =>
                       map (barycentric_coordinates p)
                           triangles_projected)
                    bbox_coordinates
-  
+
   let is_insidess = map (fn (barys : [tn]point_barycentric) : [tn]bool =>
                            map is_inside_triangle barys)
                        baryss
-  
+
   let is_insides = map (fn (is_insides : [tn]bool) : bool =>
                           reduce (||) False is_insides)
                        is_insidess
@@ -260,11 +260,31 @@ fun render_triangles
                       then (index, pixel)
                       else (-1, 0u32))
                    bbox_indices pixels mask)
-  
+
   let pixels = reshape (w * h) frame
   let pixels' = write write_indices write_values pixels
   let frame' = reshape (w, h) pixels'
   in frame'
+
+entry render_triangles_raw
+  (
+   f : *[w][h]pixel,
+   x0s : [n]f32,
+   y0s : [n]f32,
+   z0s : [n]f32,
+   x1s : [n]f32,
+   y1s : [n]f32,
+   z1s : [n]f32,
+   x2s : [n]f32,
+   y2s : [n]f32,
+   z2s : [n]f32
+  ) : [w][h]pixel =
+  let p0s = zip x0s y0s z0s
+  let p1s = zip x1s y1s z1s
+  let p2s = zip x2s y2s z2s
+  let ts = zip p0s p1s p2s
+  let c = ((0.0, 0.0, 0.0), (0.0, 0.0, 0.0))
+  in render_triangles c ts f
 
 fun rotate_point
   ((angle_x, angle_y, angle_z) : F32.D3.angles)
@@ -298,35 +318,3 @@ entry rotate_point_raw
    x_origo : f32, y_origo : f32, z_origo : f32,
    x : f32, y : f32, z : f32) : (f32, f32, f32) =
   rotate_point (angle_x, angle_y, angle_z) (x_origo, y_origo, z_origo) (x, y, z)
-  
-  
--- entry test
---   (
---    f : *[w][h]pixel,
---    x0 : f32, y0 : f32, z0 : f32,
---    x1 : f32, y1 : f32, z1 : f32,
---    x2 : f32, y2 : f32, z2 : f32
---   ) : [w][h]pixel =
---   let t = ((x0, y0, z0), (x1, y1, z1), (x2, y2, z2))
---   let c = ((0.0, 0.0, 0.0), (0.0, 0.0, 0.0))
---   in render_triangle c t f
-
-entry render_triangles_raw
-  (
-   f : *[w][h]pixel,
-   x0s : [n]f32,
-   y0s : [n]f32,
-   z0s : [n]f32,
-   x1s : [n]f32,
-   y1s : [n]f32,
-   z1s : [n]f32,
-   x2s : [n]f32,
-   y2s : [n]f32,
-   z2s : [n]f32
-  ) : [w][h]pixel =
-  let p0s = zip x0s y0s z0s
-  let p1s = zip x1s y1s z1s
-  let p2s = zip x2s y2s z2s
-  let ts = zip p0s p1s p2s
-  let c = ((0.0, 0.0, 0.0), (0.0, 0.0, 0.0))
-  in render_triangles c ts f
