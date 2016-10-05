@@ -201,7 +201,7 @@ fun hsv_average
 fun render_triangles
   (camera : camera)
   (triangles : [tn]triangle)
-  (frame : *[w][h]pixel)
+  (w : i32) (h : i32)
   : [w][h]pixel =
 
   let bbox_coordinates =
@@ -211,10 +211,6 @@ fun render_triangles
                    (x, y))
                 (iota h))
          (iota w))
-  let bbox_indices =
-    map (fn ((x, y) : (i32, i32)) : i32 =>
-           x * h + y)
-        bbox_coordinates
 
   let triangles_normalized = map (normalize_triangle camera)
                                  triangles
@@ -244,7 +240,7 @@ fun render_triangles
                            z_values)
                     z_valuess
 
-  let (mask, _z_values, colors) =
+  let (_mask, _z_values, colors) =
     unzip (zipWith (fn (is_insides : [tn]bool)
                        (z_values : [tn]f32)
                        (colors : [tn]hsv)
@@ -270,25 +266,13 @@ fun render_triangles
                    is_insidess z_valuess colorss)
 
   let pixels = map (fn x => rgb_to_pixel (hsv_to_rgb x)) colors
-
-  let (write_indices, write_values) =
-    unzip (zipWith (fn (index : i32)
-                       (pixel : pixel)
-                       (inside : bool)
-                       : (i32, pixel) =>
-                      if inside
-                      then (index, pixel)
-                      else (-1, 0u32))
-                   bbox_indices pixels mask)
-
-  let pixels = reshape (w * h) frame
-  let pixels' = write write_indices write_values pixels
-  let frame' = reshape (w, h) pixels'
-  in frame'
+  let frame = reshape (w, h) pixels
+  in frame
 
 entry render_triangles_raw
   (
-   frame : *[w][h]pixel,
+   w : i32,
+   h : i32,
    x0s : [n]f32,
    y0s : [n]f32,
    z0s : [n]f32,
@@ -310,7 +294,7 @@ entry render_triangles_raw
   let p1s = zip x1s y1s z1s
   let p2s = zip x2s y2s z2s
   let triangles = zip p0s p1s p2s
-  in render_triangles camera triangles frame
+  in render_triangles camera triangles w h
 
 fun rotate_point
   ((angle_x, angle_y, angle_z) : F32.D3.angles)
