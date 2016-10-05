@@ -53,6 +53,8 @@ class FutRacer:
               for t in s0]
         half_cube = s0 + s1 + s2
 
+        camera = [[400.0, 300.0, 0.0], [0.0, 0.0, 0.0]]
+
         frame = numpy.empty(self.size, dtype=numpy.uint32)
         while True:
             fps = self.clock.get_fps()
@@ -78,8 +80,11 @@ class FutRacer:
             y2s = numpy.array([p[1] for p in p2s])
             z2s = numpy.array([p[2] for p in p2s])
 
+            ((c_x, c_y, c_z), (c_ax, c_ay, c_az)) = camera
+
             frame = self.futhark.render_triangles_raw(
-                frame, x0s, y0s, z0s, x1s, y1s, z1s, x2s, y2s, z2s).get()
+                frame, x0s, y0s, z0s, x1s, y1s, z1s, x2s, y2s, z2s,
+                c_x, c_y, c_z, c_ax, c_ay, c_az).get()
 
             pygame.surfarray.blit_array(self.screen, frame)
             pygame.display.flip()
@@ -92,6 +97,14 @@ class FutRacer:
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_q:
                         return 0
+                    elif event.key == pygame.K_UP:
+                        camera[0][2] += 10
+                    elif event.key == pygame.K_DOWN:
+                        camera[0][2] -= 10
+                    elif event.key == pygame.K_LEFT:
+                        camera[1][1] -= 0.04
+                    elif event.key == pygame.K_RIGHT:
+                        camera[1][1] += 0.04
 
             self.clock.tick()
 

@@ -113,36 +113,54 @@ fun hsv_to_rgb (h : f32, s : f32, v : f32) : rgb =
   let (r, g, b) = (r0 + m, g0 + m, b0 + m)
   in (u32 (255.0 * r), u32 (255.0 * g), u32 (255.0 * b))
 
+fun normalize_point
+  (((xc, yc, zc), (ax, ay, az)) : camera)
+  (p0 : F32.D3.point)
+  : F32.D3.point =
+  let p1 = (translate_point (-xc, -yc, -zc) p0)
+  let p2 = rotate_point (-ax, -ay, -az) (0.0, 0.0, 0.0) p1
+  in p2
+
+fun normalize_triangle
+  (camera : camera)
+  ((p0, p1, p2) : triangle)
+  : triangle =
+  let p0n = normalize_point camera p0
+  let p1n = normalize_point camera p1
+  let p2n = normalize_point camera p2
+  let triangle' = (p0n, p1n, p2n)
+  in triangle'
+
 fun project_point
   (w : i32) (h : i32)
-  (camera : camera)
   ((x, y, z) : F32.D3.point)
   : I32.D2.point =
-  let ((xc, yc, zc), (ax, ay, az)) = camera
   let view_dist = 600.0
   let z_ratio = (view_dist + z) / view_dist
 
-  let w_half = f32 w / 2.0
-  let h_half = f32 h / 2.0
-  let x_norm = x - w_half
-  let y_norm = y - h_half
+  -- let w_half = f32 w / 2.0
+  -- let h_half = f32 h / 2.0
+  -- let x_norm = x - w_half
+  -- let y_norm = y - h_half
 
-  let x_norm_projected = x_norm / z_ratio
-  let y_norm_projected = y_norm / z_ratio
-  let x_projected = x_norm_projected + w_half
-  let y_projected = y_norm_projected + h_half
+  -- let x_norm_projected = x_norm / z_ratio
+  -- let y_norm_projected = y_norm / z_ratio
+  -- let x_projected = x_norm_projected + w_half
+  -- let y_projected = y_norm_projected + h_half
 
+  let x_projected = x / z_ratio + f32 w / 2.0
+  let y_projected = y / z_ratio + f32 h / 2.0
+  
   in (i32 x_projected, i32 y_projected)
 
 fun project_triangle
   (w : i32) (h : i32)
-  (camera : camera)
   (triangle : triangle)
   : triangle_projected =
   let ((x0, y0, z0), (x1, y1, z1), (x2, y2, z2)) = triangle
-  let (xp0, yp0) = project_point w h camera (x0, y0, z0)
-  let (xp1, yp1) = project_point w h camera (x1, y1, z1)
-  let (xp2, yp2) = project_point w h camera (x2, y2, z2)
+  let (xp0, yp0) = project_point w h (x0, y0, z0)
+  let (xp1, yp1) = project_point w h (x1, y1, z1)
+  let (xp2, yp2) = project_point w h (x2, y2, z2)
   let triangle_projected = ((xp0, yp0, z0), (xp1, yp1, z1), (xp2, yp2, z2))
   in triangle_projected
 
@@ -208,8 +226,11 @@ fun render_triangles
            x * h + y)
         bbox_coordinates
 
-  let triangles_projected = map (project_triangle w h camera)
-                                triangles
+  let triangles_normalized = map (normalize_triangle camera)
+                                 triangles
+        
+  let triangles_projected = map (project_triangle w h)
+                                triangles_normalized
 
   let baryss = map (fn (p : I32.D2.point) : [tn]point_barycentric =>
                       map (barycentric_coordinates p)
@@ -219,10 +240,6 @@ fun render_triangles
   let is_insidess = map (fn (barys : [tn]point_barycentric) : [tn]bool =>
                            map is_inside_triangle barys)
                        baryss
-
-  let is_insides = map (fn (is_insides : [tn]bool) : bool =>
-                          reduce (||) False is_insides)
-                       is_insidess
 
   let z_valuess = map (fn (barys : [tn]point_barycentric) : [tn]f32 =>
                          zipWith interpolate_z triangles_projected barys)
@@ -237,7 +254,7 @@ fun render_triangles
                            z_values)
                     z_valuess
 
-  let (mask, z_values, colors) =
+  let (mask, _z_values, colors) =
     unzip (zipWith (fn (is_insides : [tn]bool)
                        (z_values : [tn]f32)
                        (colors : [tn]hsv)
@@ -281,7 +298,7 @@ fun render_triangles
 
 entry render_triangles_raw
   (
-   f : *[w][h]pixel,
+   frame : *[w][h]pixel,
    x0s : [n]f32,
    y0s : [n]f32,
    z0s : [n]f32,
@@ -290,14 +307,20 @@ entry render_triangles_raw
    z1s : [n]f32,
    x2s : [n]f32,
    y2s : [n]f32,
-   z2s : [n]f32
+   z2s : [n]f32,
+   c_x : f32,
+   c_y : f32,
+   c_z : f32,
+   c_ax : f32,
+   c_ay : f32,
+   c_az : f32
   ) : [w][h]pixel =
+  let camera = ((c_x, c_y, c_z), (c_ax, c_ay, c_az))
   let p0s = zip x0s y0s z0s
   let p1s = zip x1s y1s z1s
   let p2s = zip x2s y2s z2s
-  let ts = zip p0s p1s p2s
-  let c = ((0.0, 0.0, 0.0), (0.0, 0.0, 0.0))
-  in render_triangles c ts f
+  let triangles = zip p0s p1s p2s
+  in render_triangles camera triangles frame
 
 fun rotate_point
   ((angle_x, angle_y, angle_z) : F32.D3.angles)
@@ -331,3 +354,14 @@ entry rotate_point_raw
    x_origo : f32, y_origo : f32, z_origo : f32,
    x : f32, y : f32, z : f32) : (f32, f32, f32) =
   rotate_point (angle_x, angle_y, angle_z) (x_origo, y_origo, z_origo) (x, y, z)
+
+fun translate_point
+  ((x_move, y_move, z_move) : F32.D3.point)
+  ((x, y, z) : F32.D3.point)
+  : F32.D3.point =
+  (x + x_move, y + y_move, z + z_move)
+
+entry translate_point_raw
+  (x_move : f32, y_move : f32, z_move : f32,
+   x : f32, y : f32, z : f32) : (f32, f32, f32) =
+  translate_point (x_move, y_move, z_move) (x, y, z)
