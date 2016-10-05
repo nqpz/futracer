@@ -1,11 +1,9 @@
 #!/usr/bin/env python
 
 import sys
-import argparse
-import collections
 import math
+import argparse
 import itertools
-import time
 
 import pygame
 import numpy
