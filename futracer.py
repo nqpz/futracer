@@ -35,11 +35,8 @@ class FutRacer:
         self.screen.blit(text, where)
 
     def rotate_point(self, angles, origo, point):
-        print(type(point[0]))
         args = angles + origo + point
-        result = self.futhark.rotate_point_raw(*args)
-        print(type(result[0]))
-        return result
+        return self.futhark.rotate_point_raw(*args)
 
     def loop(self):
         t0 = [(200.0, 100.0, 200.0),
@@ -63,14 +60,18 @@ class FutRacer:
                      for t in half_cube]
         print(half_cube)
 
+        keys_holding = {}
+        for x in [pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT]:
+            keys_holding[x] = False
+        
         frame = numpy.empty(self.size, dtype=numpy.uint32)
         while True:
             fps = self.clock.get_fps()
 
             frame.fill(0)
 
-            # half_cube = [[self.rotate_point((0.005, 0.01, 0.001), origo, p) for p in t]
-            #              for t in half_cube]
+            half_cube = [[self.rotate_point((0.005, 0.01, 0.001), origo, p) for p in t]
+                         for t in half_cube]
 
             p0s = [t[0] for t in half_cube]
             p1s = [t[1] for t in half_cube]
@@ -105,14 +106,27 @@ class FutRacer:
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_q:
                         return 0
-                    elif event.key == pygame.K_UP:
-                        camera[0][2] += 10
-                    elif event.key == pygame.K_DOWN:
-                        camera[0][2] -= 10
-                    elif event.key == pygame.K_LEFT:
-                        camera[1][1] -= 0.04
-                    elif event.key == pygame.K_RIGHT:
-                        camera[1][1] += 0.04
+                    if event.key in keys_holding.keys():
+                        keys_holding[event.key] = True
+
+                elif event.type == pygame.KEYUP:
+                    if event.key in keys_holding.keys():
+                        keys_holding[event.key] = False
+
+            if keys_holding[pygame.K_UP]:
+                p1 = camera[0][:]
+                p1[2] += 5
+                p2 = self.rotate_point(camera[1], camera[0], p1)
+                camera[0] = list(p2)
+            if keys_holding[pygame.K_DOWN]:
+                p1 = camera[0][:]
+                p1[2] -= 5
+                p2 = self.rotate_point(camera[1], camera[0], p1)
+                camera[0] = list(p2)
+            if keys_holding[pygame.K_LEFT]:
+                camera[1][1] -= 0.02
+            if keys_holding[pygame.K_RIGHT]:
+                camera[1][1] += 0.02
 
             self.clock.tick()
 
