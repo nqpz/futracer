@@ -113,15 +113,6 @@ fun hsv_to_rgb (h : f32, s : f32, v : f32) : rgb =
   let (r, g, b) = (r0 + m, g0 + m, b0 + m)
   in (u32 (255.0 * r), u32 (255.0 * g), u32 (255.0 * b))
 
-fun floor (t : f32) : i32 =
-  i32 t
-
-fun ceil (t : f32) : i32 =
-  i32 t + 1
-
-fun bound (max : i32) (t : i32) : i32 =
-  I32.min (max - 1) (I32.max 0 t)
-
 fun project_point
   (w : i32) (h : i32)
   (camera : camera)
