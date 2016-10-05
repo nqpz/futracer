@@ -138,19 +138,9 @@ fun project_point
   let view_dist = 600.0
   let z_ratio = (view_dist + z) / view_dist
 
-  -- let w_half = f32 w / 2.0
-  -- let h_half = f32 h / 2.0
-  -- let x_norm = x - w_half
-  -- let y_norm = y - h_half
-
-  -- let x_norm_projected = x_norm / z_ratio
-  -- let y_norm_projected = y_norm / z_ratio
-  -- let x_projected = x_norm_projected + w_half
-  -- let y_projected = y_norm_projected + h_half
-
   let x_projected = x / z_ratio + f32 w / 2.0
   let y_projected = y / z_ratio + f32 h / 2.0
-  
+
   in (i32 x_projected, i32 y_projected)
 
 fun project_triangle
@@ -228,7 +218,7 @@ fun render_triangles
 
   let triangles_normalized = map (normalize_triangle camera)
                                  triangles
-        
+
   let triangles_projected = map (project_triangle w h)
                                 triangles_normalized
 

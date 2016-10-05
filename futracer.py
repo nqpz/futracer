@@ -35,8 +35,11 @@ class FutRacer:
         self.screen.blit(text, where)
 
     def rotate_point(self, angles, origo, point):
+        print(type(point[0]))
         args = angles + origo + point
-        return self.futhark.rotate_point_raw(*args)
+        result = self.futhark.rotate_point_raw(*args)
+        print(type(result[0]))
+        return result
 
     def loop(self):
         t0 = [(200.0, 100.0, 200.0),
@@ -55,14 +58,19 @@ class FutRacer:
 
         camera = [[400.0, 300.0, 0.0], [0.0, 0.0, 0.0]]
 
+        print(half_cube)
+        half_cube = [[tuple(numpy.float32(x) for x in p) for p in t]
+                     for t in half_cube]
+        print(half_cube)
+
         frame = numpy.empty(self.size, dtype=numpy.uint32)
         while True:
             fps = self.clock.get_fps()
 
             frame.fill(0)
 
-            half_cube = [[self.rotate_point((0.005, 0.01, 0.001), origo, p) for p in t]
-                         for t in half_cube]
+            # half_cube = [[self.rotate_point((0.005, 0.01, 0.001), origo, p) for p in t]
+            #              for t in half_cube]
 
             p0s = [t[0] for t in half_cube]
             p1s = [t[1] for t in half_cube]
