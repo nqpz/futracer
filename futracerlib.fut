@@ -245,6 +245,8 @@ fun render_triangles
                                      then (True, z0, hsv0)
                                      else if in_triangle1 && z1 >= 0.0 && (z0 < 0.0 || !in_triangle0 || z1 < z0)
                                      then (True, z1, hsv1)
+                                     else if in_triangle0 && z0 > 0.0 && in_triangle1 && z1 > 0.0 && z0 == z1
+                                     then (True, z0, hsv0)
                                      else (False, -1.0, (0.0, 0.0, 0.0)))
                                   (False, -1.0, (0.0, 0.0, 0.0)) (zip is_insides z_values colors)))
                    is_insidess z_valuess colorss)
