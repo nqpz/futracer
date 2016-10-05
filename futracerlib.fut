@@ -33,7 +33,7 @@ struct F32 {
     then -a
     else a
 
-  fun mod (a : t, m : t) : t =
+  fun mod (a : t) (m : t) : t =
     a - f32 (i32 (a / m)) * m
 }
 
@@ -93,7 +93,7 @@ fun rgb_to_pixel (r : pixel_channel, g : pixel_channel, b : pixel_channel) : pix
 fun hsv_to_rgb (h : f32, s : f32, v : f32) : (pixel_channel, pixel_channel, pixel_channel) =
   let c = v * s
   let h' = h / 60.0
-  let x = c * (1.0 - F32.abso (F32.mod (h', 2.0) - 1.0))
+  let x = c * (1.0 - F32.abso (F32.mod h' 2.0 - 1.0))
   let (r0, g0, b0) = if 0.0 <= h' && h' < 1.0
                      then (c, x, 0.0)
                      else if 1.0 <= h' && h' < 2.0
@@ -186,6 +186,20 @@ fun interpolate_z
   let ((_xp0, _yp0, z0), (_xp1, _yp1, z1), (_xp2, _yp2, z2)) = triangle
   in an * z0 + bn * z1 + cn * z2
 
+fun hsv_average
+  ((h0, s0, v0) : (f32, f32, f32))
+  ((h1, s1, v1) : (f32, f32, f32))
+  : (f32, f32, f32) =
+  let (h0, h1) = if h0 < h1 then (h0, h1) else (h1, h0)
+  let diff_a = h1 - h0
+  let diff_b = h0 + 360.0 - h1
+  let h = if diff_a < diff_b
+          then h0 + diff_a / 2.0
+          else F32.mod (h1 + diff_b / 2.0) 360.0
+  let s = (s0 + s1) / 2.0
+  let v = (v0 + v1) / 2.0
+  in (h, s, v)
+
 fun render_triangles
   (camera : camera)
   (triangles : [tn]triangle)
@@ -246,7 +260,7 @@ fun render_triangles
                                      else if in_triangle1 && z1 >= 0.0 && (z0 < 0.0 || !in_triangle0 || z1 < z0)
                                      then (True, z1, hsv1)
                                      else if in_triangle0 && z0 > 0.0 && in_triangle1 && z1 > 0.0 && z0 == z1
-                                     then (True, z0, hsv0)
+                                     then (True, z0, hsv_average hsv0 hsv1)
                                      else (False, -1.0, (0.0, 0.0, 0.0)))
                                   (False, -1.0, (0.0, 0.0, 0.0)) (zip is_insides z_values colors)))
                    is_insidess z_valuess colorss)
