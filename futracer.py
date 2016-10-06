@@ -68,42 +68,60 @@ class FutRacer:
                        for t in half_cube_0]
 
 
-        half_cubes = []
-        for i in range(30):
-            xm = random.random() * 1200.0
-            ym = random.random() * 1000.0
-            zm = random.random() * 1000.0
-            ax = random.random() * math.pi
-            ay = random.random() * math.pi
-            az = random.random() * math.pi
-            half_cube = [[self.rotate_point((ax, ay, az), origo, self.translate_point((xm, ym, zm), p)) for p in t]
-                         for t in half_cube_0]
-            half_cubes.extend(half_cube)
-
-        p0s = [t[0] for t in half_cubes]
-        p1s = [t[1] for t in half_cubes]
-        p2s = [t[2] for t in half_cubes]
-
-        x0s = numpy.array([p[0] for p in p0s])
-        y0s = numpy.array([p[1] for p in p0s])
-        z0s = numpy.array([p[2] for p in p0s])
-
-        x1s = numpy.array([p[0] for p in p1s])
-        y1s = numpy.array([p[1] for p in p1s])
-        z1s = numpy.array([p[2] for p in p1s])
-
-        x2s = numpy.array([p[0] for p in p2s])
-        y2s = numpy.array([p[1] for p in p2s])
-        z2s = numpy.array([p[2] for p in p2s])
-
         camera = [[400.0, 300.0, 0.0], [0.0, 0.0, 0.0]]
 
         keys_holding = {}
         for x in [pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT]:
             keys_holding[x] = False
 
+        xms = []
+        yms = []
+        zms = []
+        axs = []
+        ays = []
+        azs = []
+        for i in range(20):
+            xms.append(random.random() * 2000.0 - 1000.0)
+            yms.append(random.random() * 1600.0 - 800.0)
+            zms.append(random.random() * 1000.0)
+            axs.append(random.random() * math.pi)
+            ays.append(random.random() * math.pi)
+            azs.append(random.random() * math.pi)
+
+        ta = 0.0
         while True:
+            ta += 0.01
             fps = self.clock.get_fps()
+
+            half_cubes = []
+            for i in range(20):
+                xm = xms[i]
+                ym = yms[i]
+                zm = zms[i]
+                ax = axs[i] + ta
+                ay = ays[i] + ta
+                az = azs[i] + ta
+                half_cube = [[self.rotate_point((ax, ay, az),
+                                                self.translate_point((xm, ym, zm), origo),
+                                                self.translate_point((xm, ym, zm), p)) for p in t]
+                             for t in half_cube_0]
+                half_cubes.extend(half_cube)
+
+            p0s = [t[0] for t in half_cubes]
+            p1s = [t[1] for t in half_cubes]
+            p2s = [t[2] for t in half_cubes]
+
+            x0s = numpy.array([p[0] for p in p0s])
+            y0s = numpy.array([p[1] for p in p0s])
+            z0s = numpy.array([p[2] for p in p0s])
+
+            x1s = numpy.array([p[0] for p in p1s])
+            y1s = numpy.array([p[1] for p in p1s])
+            z1s = numpy.array([p[2] for p in p1s])
+
+            x2s = numpy.array([p[0] for p in p2s])
+            y2s = numpy.array([p[1] for p in p2s])
+            z2s = numpy.array([p[2] for p in p2s])
 
             ((c_x, c_y, c_z), (c_ax, c_ay, c_az)) = camera
             frame = self.futhark.render_triangles_raw(self.size[0], self.size[1],
