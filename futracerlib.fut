@@ -1,117 +1,15 @@
+include futracerlib.color
+include futracerlib.transformations
+include futracerlib.base.F32
+include futracerlib.base.I32
+
 default (i32, f32)
-
-struct F32 {
-  type t = f32
-
-  struct D2 {
-    type point = (t, t)
-  }
-
-  struct D3 {
-    type point = (t, t, t)
-    type angles = (t, t, t)
-  }
-
-  fun min (a : t) (b : t) : t =
-    if a < b
-    then a
-    else b
-
-  fun max (a : t) (b : t) : t =
-    if a > b
-    then a
-    else b
-
-  fun min3 (a : t) (b : t) (c : t) : t =
-    min (min a b) c
-
-  fun max3 (a : t) (b : t) (c : t) : t =
-    max (max a b) c
-
-  fun abso (a : t) : t =
-    if a < 0.0
-    then -a
-    else a
-
-  fun mod (a : t) (m : t) : t =
-    a - f32 (i32 (a / m)) * m
-}
-
-struct I32 {
-  type t = i32
-
-  struct D2 {
-    type point = (t, t)
-  }
-
-  struct D3 {
-    type point = (t, t, t)
-  }
-
-  -- I know this is silly, but I wanted to try it.
-  fun _signum_if_lt (a : t) (b : t) (case_then : t) (case_else : t) : t =
-    let factor_then = (signum (b - a) + 1) / 2
-    let factor_else = (signum (a - b) + 1) / 2 + signum (a - b) * signum (b - a) + 1
-    in case_then * factor_then + case_else * factor_else
-
-  fun min (a : t) (b : t) : t =
-    _signum_if_lt a b a b
-
-  fun max (a : t) (b : t) : t =
-    _signum_if_lt b a a b
-
-  fun min3 (a : t) (b : t) (c : t) : t =
-    min (min a b) c
-
-  fun max3 (a : t) (b : t) (c : t) : t =
-    max (max a b) c
-}
 
 type triangle = (F32.D3.point, F32.D3.point, F32.D3.point)
 type point_projected = (i32, i32, f32)
 type triangle_projected = (point_projected, point_projected, point_projected)
 type point_barycentric = (i32, I32.D3.point, F32.D3.point)
 type camera = (F32.D3.point, F32.D3.angles)
-type pixel = u32
-type pixel_channel = u32
-type rgb = (pixel_channel, pixel_channel, pixel_channel)
-type hsv = (f32, f32, f32)
-
-fun pixel_get_r (p : pixel) : pixel_channel =
-  (p >> 16u32) & 255u32
-
-fun pixel_get_g (p : pixel) : pixel_channel =
-  (p >> 8u32) & 255u32
-
-fun pixel_get_b (p : pixel) : pixel_channel =
-  p & 255u32
-
-fun pixel_to_rgb (p : pixel) : (pixel_channel, pixel_channel, pixel_channel) =
-  (pixel_get_r p, pixel_get_g p, pixel_get_b p)
-
-fun rgb_to_pixel (r : pixel_channel, g : pixel_channel, b : pixel_channel) : pixel =
-  (r << 16u32) | (g << 8u32) | b
-
-fun hsv_to_rgb (h : f32, s : f32, v : f32) : rgb =
-  let c = v * s
-  let h' = h / 60.0
-  let x = c * (1.0 - F32.abso (F32.mod h' 2.0 - 1.0))
-  let (r0, g0, b0) = if 0.0 <= h' && h' < 1.0
-                     then (c, x, 0.0)
-                     else if 1.0 <= h' && h' < 2.0
-                     then (x, c, 0.0)
-                     else if 2.0 <= h' && h' < 3.0
-                     then (0.0, c, x)
-                     else if 3.0 <= h' && h' < 4.0
-                     then (0.0, x, c)
-                     else if 4.0 <= h' && h' < 5.0
-                     then (x, 0.0, c)
-                     else if 5.0 <= h' && h' < 6.0
-                     then (c, 0.0, x)
-                     else (0.0, 0.0, 0.0)
-  let m = v - c
-  let (r, g, b) = (r0 + m, g0 + m, b0 + m)
-  in (u32 (255.0 * r), u32 (255.0 * g), u32 (255.0 * b))
 
 fun normalize_point
   (((xc, yc, zc), (ax, ay, az)) : camera)
@@ -183,20 +81,6 @@ fun interpolate_z
   : f32 =
   let ((_xp0, _yp0, z0), (_xp1, _yp1, z1), (_xp2, _yp2, z2)) = triangle
   in an * z0 + bn * z1 + cn * z2
-
-fun hsv_average
-  ((h0, s0, v0) : hsv)
-  ((h1, s1, v1) : hsv)
-  : hsv =
-  let (h0, h1) = if h0 < h1 then (h0, h1) else (h1, h0)
-  let diff_a = h1 - h0
-  let diff_b = h0 + 360.0 - h1
-  let h = if diff_a < diff_b
-          then h0 + diff_a / 2.0
-          else F32.mod (h1 + diff_b / 2.0) 360.0
-  let s = (s0 + s1) / 2.0
-  let v = (v0 + v1) / 2.0
-  in (h, s, v)
 
 fun render_triangles
   (camera : camera)
@@ -295,47 +179,3 @@ entry render_triangles_raw
   let p2s = zip x2s y2s z2s
   let triangles = zip p0s p1s p2s
   in render_triangles camera triangles w h
-
-fun rotate_point
-  ((angle_x, angle_y, angle_z) : F32.D3.angles)
-  ((x_origo, y_origo, z_origo) : F32.D3.point)
-  ((x, y, z) : F32.D3.point)
-  : F32.D3.point =
-  let (x0, y0, z0) = (x - x_origo, y - y_origo, z - z_origo)
-
-  let (sin_x, cos_x) = (sin32 angle_x, cos32 angle_x)
-  let (sin_y, cos_y) = (sin32 angle_y, cos32 angle_y)
-  let (sin_z, cos_z) = (sin32 angle_z, cos32 angle_z)
-
-  -- X axis.
-  let (x1, y1, z1) = (x0,
-                      y0 * cos_x - z0 * sin_x,
-                      y0 * sin_x + z0 * cos_x)
-  -- Y axis.
-  let (x2, y2, z2) = (z1 * sin_y + x1 * cos_y,
-                      y1,
-                      z1 * cos_y - x1 * sin_y)
-  -- Z axis.
-  let (x3, y3, z3) = (x2 * cos_z - y2 * sin_z,
-                      x2 * sin_z + y2 * cos_z,
-                      z2)
-
-  let (x', y', z') = (x_origo + x3, y_origo + y3, z_origo + z3)
-  in (x', y', z')
-
-entry rotate_point_raw
-  (angle_x : f32, angle_y : f32, angle_z : f32,
-   x_origo : f32, y_origo : f32, z_origo : f32,
-   x : f32, y : f32, z : f32) : (f32, f32, f32) =
-  rotate_point (angle_x, angle_y, angle_z) (x_origo, y_origo, z_origo) (x, y, z)
-
-fun translate_point
-  ((x_move, y_move, z_move) : F32.D3.point)
-  ((x, y, z) : F32.D3.point)
-  : F32.D3.point =
-  (x + x_move, y + y_move, z + z_move)
-
-entry translate_point_raw
-  (x_move : f32, y_move : f32, z_move : f32,
-   x : f32, y : f32, z : f32) : (f32, f32, f32) =
-  translate_point (x_move, y_move, z_move) (x, y, z)
