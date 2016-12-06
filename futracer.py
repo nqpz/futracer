@@ -1,10 +1,11 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import sys
 import math
 import random
 import argparse
 import itertools
+import time
 
 import pygame
 import numpy
@@ -74,13 +75,14 @@ class FutRacer:
         for x in [pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT]:
             keys_holding[x] = False
 
+        n = 20
         xms = []
         yms = []
         zms = []
         axs = []
         ays = []
         azs = []
-        for i in range(20):
+        for i in range(n):
             xms.append(random.random() * 2000.0 - 1000.0)
             yms.append(random.random() * 1600.0 - 800.0)
             zms.append(random.random() * 1000.0)
@@ -94,7 +96,7 @@ class FutRacer:
             fps = self.clock.get_fps()
 
             half_cubes = []
-            for i in range(20):
+            for i in range(n):
                 xm = xms[i]
                 ym = yms[i]
                 zm = zms[i]
@@ -124,12 +126,17 @@ class FutRacer:
             z2s = numpy.array([p[2] for p in p2s])
 
             ((c_x, c_y, c_z), (c_ax, c_ay, c_az)) = camera
+            time_start = time.time()
             frame = self.futhark.render_triangles_raw(self.size[0], self.size[1],
                 x0s, y0s, z0s, x1s, y1s, z1s, x2s, y2s, z2s,
-                c_x, c_y, c_z, c_ax, c_ay, c_az).get()
+                c_x, c_y, c_z, c_ax, c_ay, c_az)
+            time_end = time.time()
+            frame = frame.get()
+            futhark_dur_ms = (time_end - time_start) * 1000
             pygame.surfarray.blit_array(self.screen, frame)
 
             self.message('FPS: {:.02f}'.format(fps), (10, 10))
+            self.message('Futhark only: {:.02f} ms'.format(futhark_dur_ms), (10, 40))
 
             pygame.display.flip()
 

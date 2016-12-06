@@ -15,9 +15,9 @@ fun normalize_point
   (((xc, yc, zc), (ax, ay, az)) : camera)
   (p0 : F32.D3.point)
   : F32.D3.point =
-  let p1 = (translate_point (-xc, -yc, -zc) p0)
-  let p2 = rotate_point (-ax, -ay, -az) (0.0, 0.0, 0.0) p1
-  in p2
+      let p1 = (translate_point (-xc, -yc, -zc) p0)
+      let p2 = rotate_point (-ax, -ay, -az) (0.0, 0.0, 0.0) p1
+      in p2
 
 fun normalize_triangle
   (camera : camera)
