@@ -8,6 +8,8 @@ program.
 Not quite finished.  Also pretty slow, and probably not getting any
 faster.
 
+[![Video of futracer](https://hongabar.org/~niels/futracer/futracer-image.jpg)](https://hongabar.org/~niels/futracer/futracer.webm)
+
 
 ## Dependencies
 
