@@ -34,7 +34,9 @@ fun project_point
   ((x, y, z) : F32.point3D)
   : I32.point2D =
   let view_dist = 600.0
-  let z_ratio = (view_dist + z) / view_dist
+  let z_ratio = if z >= 0.0
+                then (view_dist + z) / view_dist
+                else 1.0 / ((view_dist - z) / view_dist)
 
   let x_projected = x / z_ratio + f32 w / 2.0
   let y_projected = y / z_ratio + f32 h / 2.0
