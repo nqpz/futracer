@@ -101,6 +101,42 @@ class FutRacer:
 
         return half_cubes
 
+    def race_track(self):
+        def straight(start, width, length, turn=None):
+            sx, sy, sz = start
+            t0 = ((sx - width / 2, sy, sz),
+                  (sx + width / 2, sy, sz),
+                  (sx + width / 2, sy, sz + length))
+            t1 = ((sx + width / 2, sy, sz + length),
+                  (sx - width / 2, sy, sz + length),
+                  (sx - width / 2, sy, sz))
+            plane = [t0, t1]
+            end = (sx, sy, sz + length)
+            if turn is not None:
+                angles = (0.0, turn, 0.0)
+                plane = [[self.rotate_point(angles, start, p)
+                          for p in t] for t in plane]
+                end = self.rotate_point(angles, start, end)
+            return end, plane
+
+        class N:
+            pass
+        glob = N()
+        glob.cur = (0.0, 300.0, 0.0)
+        glob.turn = 0.0
+        triangles = []
+        def magic(width, length, lturn=None):
+            if lturn is not None:
+                glob.turn += lturn
+            glob.cur, plane = straight(glob.cur, width, length, glob.turn)
+            triangles.extend(plane)
+
+        for i in range(100):
+            magic(600.0, 800.0, 0.05)
+
+        self.draw_dist = 2000.0
+        return triangles
+
     def loop(self):
         camera = [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]]
 
@@ -108,27 +144,27 @@ class FutRacer:
         for x in [pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT]:
             keys_holding[x] = False
 
-        ps = self.random_cubes()
+        # ps = self.random_cubes()
+        ps = self.race_track()
 
         p0s = [t[0] for t in ps]
         p1s = [t[1] for t in ps]
         p2s = [t[2] for t in ps]
 
-        x0s = numpy.array([p[0] for p in p0s])
-        y0s = numpy.array([p[1] for p in p0s])
-        z0s = numpy.array([p[2] for p in p0s])
+        x0s = numpy.array([p[0] for p in p0s]).astype('float32')
+        y0s = numpy.array([p[1] for p in p0s]).astype('float32')
+        z0s = numpy.array([p[2] for p in p0s]).astype('float32')
 
-        x1s = numpy.array([p[0] for p in p1s])
-        y1s = numpy.array([p[1] for p in p1s])
-        z1s = numpy.array([p[2] for p in p1s])
+        x1s = numpy.array([p[0] for p in p1s]).astype('float32')
+        y1s = numpy.array([p[1] for p in p1s]).astype('float32')
+        z1s = numpy.array([p[2] for p in p1s]).astype('float32')
 
-        x2s = numpy.array([p[0] for p in p2s])
-        y2s = numpy.array([p[1] for p in p2s])
-        z2s = numpy.array([p[2] for p in p2s])
+        x2s = numpy.array([p[0] for p in p2s]).astype('float32')
+        y2s = numpy.array([p[1] for p in p2s]).astype('float32')
+        z2s = numpy.array([p[2] for p in p2s]).astype('float32')
 
         while True:
             fps = self.clock.get_fps()
-
             ((c_x, c_y, c_z), (c_ax, c_ay, c_az)) = camera
             time_start = time.time()
             frame = self.futhark.render_triangles_raw(
