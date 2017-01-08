@@ -1,13 +1,13 @@
 default (i32, f32)
 
-struct I32 {
+module I32 {
   type t = i32
 
-  struct D2 {
+  module D2 {
     type point = (t, t)
   }
 
-  struct D3 {
+  module D3 {
     type point = (t, t, t)
   }
 

@@ -1,7 +1,7 @@
-include futracerlib.color
-include futracerlib.transformations
 include futracerlib.base.F32
 include futracerlib.base.I32
+include futracerlib.transformations
+include futracerlib.color
 
 default (i32, f32)
 
@@ -129,7 +129,7 @@ fun render_triangles
                        (z_values : [tn]f32)
                        (colors : [tn]hsv)
                        : (bool, f32, hsv) =>
-                      let neutral_element = (False, -1.0, (0.0, 0.0, 0.0)) in
+                      let neutral_element = (false, -1.0, (0.0, 0.0, 0.0)) in
                       (reduce (fn ((in_triangle0, z0, hsv0)
                                    : (bool, f32, hsv))
                                   ((in_triangle1, z1, hsv1)
@@ -137,13 +137,13 @@ fun render_triangles
                                   : (bool, f32, hsv) =>
                                  if (in_triangle0 && z0 >= 0.0 &&
                                      (z1 < 0.0 || !in_triangle1 || z0 < z1))
-                                 then (True, z0, hsv0)
+                                 then (true, z0, hsv0)
                                  else if (in_triangle1 && z1 >= 0.0 &&
                                           (z0 < 0.0 || !in_triangle0 || z1 < z0))
-                                 then (True, z1, hsv1)
+                                 then (true, z1, hsv1)
                                  else if (in_triangle0 && z0 > 0.0 &&
                                           in_triangle1 && z1 > 0.0 && z0 == z1)
-                                 then (True, z0, hsv_average hsv0 hsv1)
+                                 then (true, z0, hsv_average hsv0 hsv1)
                                  else neutral_element)
                               neutral_element
                               (zip is_insides z_values colors)))
