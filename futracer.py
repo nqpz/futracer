@@ -45,7 +45,7 @@ class FutRacer:
         args = angles + origo + point
         return self.futhark.rotate_point_raw(*args)
 
-    def loop(self):
+    def random_cubes(self):
         t0 = [(200.0, 100.0, 200.0),
               (200.0, 300.0, 200.0),
               (400.0, 100.0, 200.0)]
@@ -69,13 +69,6 @@ class FutRacer:
         half_cube_0 = [[tuple(numpy.float32(x) for x in p) for p in t]
                        for t in half_cube_0]
 
-
-        camera = [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]]
-
-        keys_holding = {}
-        for x in [pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT]:
-            keys_holding[x] = False
-
         n = 2000
         xms = []
         yms = []
@@ -83,6 +76,7 @@ class FutRacer:
         axs = []
         ays = []
         azs = []
+
         for i in range(n):
             xms.append(random.random() * 20000.0 - 10000.0)
             yms.append(random.random() * 1000.0 - 500.0)
@@ -91,24 +85,34 @@ class FutRacer:
             ays.append(random.random() * math.pi)
             azs.append(random.random() * math.pi)
 
-        ta = 0.0
         half_cubes = []
         for i in range(n):
             xm = xms[i]
             ym = yms[i]
             zm = zms[i]
-            ax = axs[i] + ta
-            ay = ays[i] + ta
-            az = azs[i] + ta
+            ax = axs[i]
+            ay = ays[i]
+            az = azs[i]
             half_cube = [[self.rotate_point((ax, ay, az),
                                             self.translate_point((xm, ym, zm), origo),
                                             self.translate_point((xm, ym, zm), p)) for p in t]
                          for t in half_cube_0]
             half_cubes.extend(half_cube)
 
-        p0s = [t[0] for t in half_cubes]
-        p1s = [t[1] for t in half_cubes]
-        p2s = [t[2] for t in half_cubes]
+        return half_cubes
+
+    def loop(self):
+        camera = [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]]
+
+        keys_holding = {}
+        for x in [pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT]:
+            keys_holding[x] = False
+
+        ps = self.random_cubes()
+
+        p0s = [t[0] for t in ps]
+        p1s = [t[1] for t in ps]
+        p2s = [t[2] for t in ps]
 
         x0s = numpy.array([p[0] for p in p0s])
         y0s = numpy.array([p[1] for p in p0s])
@@ -123,7 +127,6 @@ class FutRacer:
         z2s = numpy.array([p[2] for p in p2s])
 
         while True:
-            ta += 0.01
             fps = self.clock.get_fps()
 
             ((c_x, c_y, c_z), (c_ax, c_ay, c_az)) = camera
