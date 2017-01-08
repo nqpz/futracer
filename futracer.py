@@ -18,6 +18,7 @@ class FutRacer:
         self.size = size
         if self.size is None:
             self.size = (800, 600)
+        self.draw_dist = 800.0
 
     def race(self):
         # Setup pygame.
@@ -127,7 +128,8 @@ class FutRacer:
 
             ((c_x, c_y, c_z), (c_ax, c_ay, c_az)) = camera
             time_start = time.time()
-            frame = self.futhark.render_triangles_raw(self.size[0], self.size[1],
+            frame = self.futhark.render_triangles_raw(
+                self.size[0], self.size[1], self.draw_dist,
                 x0s, y0s, z0s, x1s, y1s, z1s, x2s, y2s, z2s,
                 c_x, c_y, c_z, c_ax, c_ay, c_az)
             time_end = time.time()

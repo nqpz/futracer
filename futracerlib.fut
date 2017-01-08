@@ -5,16 +5,16 @@ include futracerlib.color
 
 default (i32, f32)
 
-type triangle = (F32.D3.point, F32.D3.point, F32.D3.point)
+type triangle = (F32.point3D, F32.point3D, F32.point3D)
 type point_projected = (i32, i32, f32)
 type triangle_projected = (point_projected, point_projected, point_projected)
-type point_barycentric = (i32, I32.D3.point, F32.D3.point)
-type camera = (F32.D3.point, F32.D3.angles)
+type point_barycentric = (i32, I32.point3D, F32.point3D)
+type camera = (F32.point3D, F32.angles)
 
 fun normalize_point
   (((xc, yc, zc), (ax, ay, az)) : camera)
-  (p0 : F32.D3.point)
-  : F32.D3.point =
+  (p0 : F32.point3D)
+  : F32.point3D =
       let p1 = (translate_point (-xc, -yc, -zc) p0)
       let p2 = rotate_point (-ax, -ay, -az) (0.0, 0.0, 0.0) p1
       in p2
@@ -31,8 +31,8 @@ fun normalize_triangle
 
 fun project_point
   (w : i32) (h : i32)
-  ((x, y, z) : F32.D3.point)
-  : I32.D2.point =
+  ((x, y, z) : F32.point3D)
+  : I32.point2D =
   let view_dist = 600.0
   let z_ratio = (view_dist + z) / view_dist
 
@@ -56,7 +56,7 @@ fun in_range (t : i32) (a : i32) (b : i32) : bool =
   (a < b && a <= t && t <= b) || (b <= a && b <= t && t <= a)
 
 fun barycentric_coordinates
-  ((x, y) : I32.D2.point)
+  ((x, y) : I32.point2D)
   (triangle : triangle_projected)
   : point_barycentric =
   let ((xp0, yp0, _z0), (xp1, yp1, _z1), (xp2, yp2, _z2)) = triangle
@@ -82,12 +82,35 @@ fun interpolate_z
   let ((_xp0, _yp0, z0), (_xp1, _yp1, z1), (_xp2, _yp2, z2)) = triangle
   in an * z0 + bn * z1 + cn * z2
 
+fun dist
+  ((x0, y0, z0) : F32.point3D)
+  ((x1, y1, z1) : F32.point3D)
+  : f32 =
+  sqrt32((x1 - x0)**2.0 + (y1 - y0)**2.0 + (z1 - z0)**2.0)
+
+fun close_enough
+  (draw_dist : f32)
+  ((p_camera, _) : camera)
+  (triangle : triangle)
+  : bool =
+  (dist p_camera (#0 triangle) <= draw_dist) ||
+  (dist p_camera (#1 triangle) <= draw_dist) ||
+  (dist p_camera (#2 triangle) <= draw_dist)
+
 fun render_triangles
+  (camera : camera)
+  (triangles : []triangle)
+  (w : i32) (h : i32)
+  (draw_dist : f32)
+  : [w][h]pixel =
+  let triangles_close = filter (close_enough draw_dist camera) triangles
+  in render_triangles' camera triangles_close w h
+
+fun render_triangles'
   (camera : camera)
   (triangles : [tn]triangle)
   (w : i32) (h : i32)
   : [w][h]pixel =
-
   let bbox_coordinates =
     reshape (w * h)
     (map (fn (x : i32) : [](i32, i32) =>
@@ -102,7 +125,7 @@ fun render_triangles
   let triangles_projected = map (project_triangle w h)
                                 triangles_normalized
 
-  let baryss = map (fn (p : I32.D2.point) : [tn]point_barycentric =>
+  let baryss = map (fn (p : I32.point2D) : [tn]point_barycentric =>
                       map (barycentric_coordinates p)
                           triangles_projected)
                    bbox_coordinates
@@ -157,6 +180,7 @@ entry render_triangles_raw
   (
    w : i32,
    h : i32,
+   draw_dist : f32,
    x0s : [n]f32,
    y0s : [n]f32,
    z0s : [n]f32,
@@ -178,4 +202,4 @@ entry render_triangles_raw
   let p1s = zip x1s y1s z1s
   let p2s = zip x2s y2s z2s
   let triangles = zip p0s p1s p2s
-  in render_triangles camera triangles w h
+  in render_triangles camera triangles w h draw_dist

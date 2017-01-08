@@ -25,7 +25,7 @@ fun rgb_to_pixel (r : pixel_channel, g : pixel_channel, b : pixel_channel) : pix
 fun hsv_to_rgb ((h, s, v) : hsv) : rgb =
   let c = v * s
   let h' = h / 60.0
-  let x = c * (1.0 - F32.abso (F32.mod h' 2.0 - 1.0))
+  let x = c * (1.0 - F32.abl (F32.mod h' 2.0 - 1.0))
   let (r0, g0, b0) = if 0.0 <= h' && h' < 1.0
                      then (c, x, 0.0)
                      else if 1.0 <= h' && h' < 2.0
