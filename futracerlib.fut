@@ -137,7 +137,7 @@ fun render_triangles'
                        baryss
 
   let z_valuess = map (fn (barys : [tn]point_barycentric) : [tn]f32 =>
-                         zipWith interpolate_z triangles_projected barys)
+                         map interpolate_z triangles_projected barys)
                       baryss
 
   let colorss = map (fn (z_values : []f32) : [tn]hsv =>
@@ -150,29 +150,29 @@ fun render_triangles'
                     z_valuess
 
   let (_mask, _z_values, colors) =
-    unzip (zipWith (fn (is_insides : [tn]bool)
-                       (z_values : [tn]f32)
-                       (colors : [tn]hsv)
-                       : (bool, f32, hsv) =>
-                      let neutral_element = (false, -1.0, (0.0, 0.0, 0.0)) in
-                      (reduce (fn ((in_triangle0, z0, hsv0)
-                                   : (bool, f32, hsv))
-                                  ((in_triangle1, z1, hsv1)
-                                   : (bool, f32, hsv))
-                                  : (bool, f32, hsv) =>
-                                 if (in_triangle0 && z0 >= 0.0 &&
-                                     (z1 < 0.0 || !in_triangle1 || z0 < z1))
-                                 then (true, z0, hsv0)
-                                 else if (in_triangle1 && z1 >= 0.0 &&
-                                          (z0 < 0.0 || !in_triangle0 || z1 < z0))
-                                 then (true, z1, hsv1)
-                                 else if (in_triangle0 && z0 > 0.0 &&
-                                          in_triangle1 && z1 > 0.0 && z0 == z1)
-                                 then (true, z0, hsv_average hsv0 hsv1)
-                                 else neutral_element)
-                              neutral_element
-                              (zip is_insides z_values colors)))
-                   is_insidess z_valuess colorss)
+    unzip (map (fn (is_insides : [tn]bool)
+                   (z_values : [tn]f32)
+                   (colors : [tn]hsv)
+                   : (bool, f32, hsv) =>
+                  let neutral_element = (false, -1.0, (0.0, 0.0, 0.0)) in
+                  (reduce (fn ((in_triangle0, z0, hsv0)
+                               : (bool, f32, hsv))
+                              ((in_triangle1, z1, hsv1)
+                               : (bool, f32, hsv))
+                              : (bool, f32, hsv) =>
+                             if (in_triangle0 && z0 >= 0.0 &&
+                                 (z1 < 0.0 || !in_triangle1 || z0 < z1))
+                             then (true, z0, hsv0)
+                             else if (in_triangle1 && z1 >= 0.0 &&
+                                      (z0 < 0.0 || !in_triangle0 || z1 < z0))
+                             then (true, z1, hsv1)
+                             else if (in_triangle0 && z0 > 0.0 &&
+                                      in_triangle1 && z1 > 0.0 && z0 == z1)
+                             then (true, z0, hsv_average hsv0 hsv1)
+                             else neutral_element)
+                          neutral_element
+                          (zip is_insides z_values colors)))
+               is_insidess z_valuess colorss)
 
   let pixels = map (fn x => rgb_to_pixel (hsv_to_rgb x)) colors
   let frame = reshape (w, h) pixels
