@@ -144,7 +144,8 @@ fun render_triangles'
                        map (fn (z : f32) : hsv =>
                               let h = 120.0
                               let s = 0.8
-                              let v = F32.min 1.0 (1.0 / (z * 0.01))
+                              let flashlightBrightness = 2.0 * 10.0**5.0
+                              let v = F32.min 1.0 (flashlightBrightness / (z ** 2.0))
                               in (h, s, v))
                            z_values)
                     z_valuess
