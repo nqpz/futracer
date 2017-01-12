@@ -11,6 +11,12 @@ type triangle_projected = (point_projected, point_projected, point_projected)
 type point_barycentric = (i32, I32.point3D, F32.point3D)
 type camera = (F32.point3D, F32.angles)
 
+-- If surface_type == 1, use the color in #1 surface.
+-- If surface_type == 2, use the surface from the index in #2 surface.
+type surface_type = i32
+type surface = (surface_type, hsv, i32)
+type triangle_with_surface = (triangle, surface)
+
 fun normalize_point
   (((xc, yc, zc), (ax, ay, az)) : camera)
   (p0 : F32.point3D)
@@ -101,26 +107,28 @@ fun close_enough
 
 fun render_triangles
   (camera : camera)
-  (triangles : []triangle)
+  (triangles : []triangle_with_surface)
   (w : i32) (h : i32)
   (draw_dist : f32)
   : [w][h]pixel =
-  let triangles_close = filter (close_enough draw_dist camera) triangles
+  let triangles_close =
+    filter (fn t => close_enough draw_dist camera (#0 t)) triangles
   in render_triangles' camera triangles_close w h
 
 fun render_triangles'
   (camera : camera)
-  (triangles : [tn]triangle)
+  (triangles_with_surfaces : [tn]triangle_with_surface)
   (w : i32) (h : i32)
   : [w][h]pixel =
   let bbox_coordinates =
     reshape (w * h)
-    (map (fn (x : i32) : [](i32, i32) =>
+    (map (fn (x : i32) : [h](i32, i32) =>
             map (fn (y : i32) : (i32, i32) =>
                    (x, y))
                 (iota h))
          (iota w))
 
+  let (triangles, surfaces) = unzip triangles_with_surfaces
   let triangles_normalized = map (normalize_triangle camera)
                                  triangles
 
@@ -140,15 +148,25 @@ fun render_triangles'
                          map interpolate_z triangles_projected barys)
                       baryss
 
-  let colorss = map (fn (z_values : []f32) : [tn]hsv =>
-                       map (fn (z : f32) : hsv =>
-                              let h = 120.0
-                              let s = 0.8
-                              let flashlightBrightness = 2.0 * 10.0**5.0
-                              let v = F32.min 1.0 (flashlightBrightness / (z ** 2.0))
-                              in (h, s, v))
-                           z_values)
-                    z_valuess
+  let colorss = map (fn (z_values : [tn]f32)
+                        (barys : [tn]point_barycentric)
+                        : [tn]hsv =>
+                       map (fn (z : f32) (bary : point_barycentric)
+                               ((s_t, s_hsv, s_ti) : surface) : hsv =>
+                              let (h, s, v) =
+                                if s_t == 1
+                                -- Use the color.
+                                then s_hsv
+                                else if s_t == 2
+                                then (0.0, 0.0, 0.0)
+                                -- Use the texture index
+                                else (0.0, 0.0, 0.0) -- error
+                              let flashlight_brightness = 2.0 * 10.0**5.0
+                              let v_factor = F32.min 1.0 (flashlight_brightness
+                                                          / (z ** 2.0))
+                              in (h, s, v * v_factor))
+                           z_values barys surfaces)
+                    z_valuess baryss
 
   let (_mask, _z_values, colors) =
     unzip (map (fn (is_insides : [tn]bool)
@@ -193,6 +211,11 @@ entry render_triangles_raw
    x2s : [n]f32,
    y2s : [n]f32,
    z2s : [n]f32,
+   surface_types : [n]surface_type,
+   surface_hsv_hs : [n]f32,
+   surface_hsv_ss : [n]f32,
+   surface_hsv_vs : [n]f32,
+   surface_indices : [n]i32,
    c_x : f32,
    c_y : f32,
    c_z : f32,
@@ -205,4 +228,7 @@ entry render_triangles_raw
   let p1s = zip x1s y1s z1s
   let p2s = zip x2s y2s z2s
   let triangles = zip p0s p1s p2s
-  in render_triangles camera triangles w h draw_dist
+  let surface_hsvs = zip surface_hsv_hs surface_hsv_ss surface_hsv_vs
+  let surfaces = zip surface_types surface_hsvs surface_indices
+  let triangles_with_surfaces = zip triangles surfaces
+  in render_triangles camera triangles_with_surfaces w h draw_dist

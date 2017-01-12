@@ -70,32 +70,25 @@ class FutRacer:
                        for t in half_cube_0]
 
         n = 2000
-        xms = []
-        yms = []
-        zms = []
-        axs = []
-        ays = []
-        azs = []
-
-        for i in range(n):
-            xms.append(random.random() * 20000.0 - 10000.0)
-            yms.append(random.random() * 1000.0 - 500.0)
-            zms.append(random.random() * 20000.0 - 10000.0)
-            axs.append(random.random() * math.pi)
-            ays.append(random.random() * math.pi)
-            azs.append(random.random() * math.pi)
-
         half_cubes = []
         for i in range(n):
-            xm = xms[i]
-            ym = yms[i]
-            zm = zms[i]
-            ax = axs[i]
-            ay = ays[i]
-            az = azs[i]
-            half_cube = [[self.rotate_point((ax, ay, az),
-                                            self.translate_point((xm, ym, zm), origo),
-                                            self.translate_point((xm, ym, zm), p)) for p in t]
+            xm = random.random() * 20000.0 - 10000.0
+            ym = random.random() * 1000.0 - 500.0
+            zm = random.random() * 20000.0 - 10000.0
+            ax = random.random() * math.pi
+            ay = random.random() * math.pi
+            az = random.random() * math.pi
+            if True:
+                hsv = (random.random() * 360.0,
+                       random.random(),
+                       random.random())
+                surf = (1, hsv, -1)
+            def move_point(p):
+                return self.rotate_point(
+                    (ax, ay, az),
+                    self.translate_point((xm, ym, zm), origo),
+                    self.translate_point((xm, ym, zm), p))
+            half_cube = [[move_point(p) for p in t] + [surf]
                          for t in half_cube_0]
             half_cubes.extend(half_cube)
 
@@ -114,8 +107,10 @@ class FutRacer:
             end = (sx, sy, sz + length)
             if turn is not None:
                 angles = (0.0, turn, 0.0)
+                green = (1, (120.0, 1.0, 1.0), -1)
                 plane = [[self.rotate_point(angles, start, p)
-                          for p in t] for t in plane]
+                          for p in t] + [green]
+                         for t in plane]
                 end = self.rotate_point(angles, start, end)
             return end, plane
 
@@ -144,12 +139,13 @@ class FutRacer:
         for x in [pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT]:
             keys_holding[x] = False
 
-        # ps = self.random_cubes()
-        ps = self.race_track()
+        ts = self.random_cubes()
+        # ts = self.race_track()
 
-        p0s = [t[0] for t in ps]
-        p1s = [t[1] for t in ps]
-        p2s = [t[2] for t in ps]
+        p0s = [t[0] for t in ts]
+        p1s = [t[1] for t in ts]
+        p2s = [t[2] for t in ts]
+        ss = [t[3] for t in ts]
 
         x0s = numpy.array([p[0] for p in p0s]).astype('float32')
         y0s = numpy.array([p[1] for p in p0s]).astype('float32')
@@ -163,6 +159,12 @@ class FutRacer:
         y2s = numpy.array([p[1] for p in p2s]).astype('float32')
         z2s = numpy.array([p[2] for p in p2s]).astype('float32')
 
+        s_types = numpy.array([s[0] for s in ss]).astype('int32')
+        s_hsv_hs = numpy.array([s[1][0] for s in ss]).astype('float32')
+        s_hsv_ss = numpy.array([s[1][1] for s in ss]).astype('float32')
+        s_hsv_vs = numpy.array([s[1][2] for s in ss]).astype('float32')
+        s_indices = numpy.array([s[2] for s in ss]).astype('int32')
+
         while True:
             fps = self.clock.get_fps()
             ((c_x, c_y, c_z), (c_ax, c_ay, c_az)) = camera
@@ -170,6 +172,7 @@ class FutRacer:
             frame = self.futhark.render_triangles_raw(
                 self.size[0], self.size[1], self.draw_dist,
                 x0s, y0s, z0s, x1s, y1s, z1s, x2s, y2s, z2s,
+                s_types, s_hsv_hs, s_hsv_ss, s_hsv_vs, s_indices,
                 c_x, c_y, c_z, c_ax, c_ay, c_az)
             time_end = time.time()
             frame = frame.get()
