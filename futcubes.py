@@ -123,12 +123,29 @@ class FutCubes:
         for x in [pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT]:
             keys_holding[x] = False
 
-        while True:
+        def inf_range():
+            i = 0
+            while True:
+                yield i
+                i += 1
+
+        for i in inf_range():
             fps = self.clock.get_fps()
             time_start = time.time()
-            frame = self.racer.render_triangles_preprocessed(
+
+            dynamic_triangle = [[-300, -300, 500],
+                                [300, -300, 500],
+                                [0, 300, 400],
+                                [1, [240, 1, 1], 0]]
+            dynamic_origo = [0, 0, 450]
+            dynamic_angles = [i / 60.0, i / 80.0, i / 100.0]
+            dynamic_triangle = self.racer.rotate_triangle(
+                dynamic_angles, dynamic_origo, dynamic_triangle)
+
+            frame = self.racer.render_triangles(
                 self.size, self.draw_dist, camera,
-                triangles_pre, textures_pre)
+                [dynamic_triangle], triangles_pre,
+                None, textures_pre)
             time_end = time.time()
             frame = frame.get()
             futhark_dur_ms = (time_end - time_start) * 1000

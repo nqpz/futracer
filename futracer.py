@@ -4,6 +4,7 @@ import colorsys
 import numpy
 import png
 import pyopencl as cl
+import pyopencl.array
 
 import futracerlib
 
@@ -24,9 +25,17 @@ class FutRacer:
         args = move + point
         return self.futhark.translate_point_raw(*args)
 
+    def translate_triangle(self, angles, origo, triangle):
+        return [self.translate_point(angles, origo, p)
+                for p in triangle[:3]] + triangle[3:]
+
     def rotate_point(self, angles, origo, point):
         args = angles + origo + point
         return self.futhark.rotate_point_raw(*args)
+
+    def rotate_triangle(self, angles, origo, triangle):
+        return [self.rotate_point(angles, origo, p)
+                for p in triangle[:3]] + triangle[3:]
 
     def to_device(self, xs, typ):
         # This is VERY brittle.  It must change whenever futhark-pyopencl
@@ -64,7 +73,7 @@ class FutRacer:
         s_hsv_vs = self.to_device((s[1][2] for s in ss), 'float32')
         s_indices = self.to_device((s[2] for s in ss), 'int32')
 
-        return (p0s, p1s, p2s, ss, x0s, y0s, z0s, x1s, y1s, z1s, x2s, y2s, z2s,
+        return (x0s, y0s, z0s, x1s, y1s, z1s, x2s, y2s, z2s,
                 s_types, s_hsv_vs, s_hsv_ss, s_hsv_vs, s_indices)
 
     def load_double_texture(self, path):
@@ -119,7 +128,7 @@ class FutRacer:
 
         ((c_x, c_y, c_z), (c_ax, c_ay, c_az)) = camera
 
-        (p0s, p1s, p2s, ss, x0s, y0s, z0s, x1s, y1s, z1s, x2s, y2s, z2s,
+        (x0s, y0s, z0s, x1s, y1s, z1s, x2s, y2s, z2s,
          s_types, s_hsv_hs, s_hsv_ss, s_hsv_vs, s_indices) = triangles_pre
 
         (textures_len, texture_w, texture_h,
@@ -133,9 +142,29 @@ class FutRacer:
             s_textures_hs_flat, s_textures_ss_flat, s_textures_vs_flat,
             c_x, c_y, c_z, c_ax, c_ay, c_az)
 
-    def render_triangles(self, size, draw_dist, camera, triangles, textures):
-        triangles_pre = self.preprocess_triangles(triangles)
-        textures_pre = self.preprocess_triangles(textures)
+    def render_triangles(self, size, draw_dist, camera,
+                         triangles, triangles_pre,
+                         textures, textures_pre):
+        if triangles is None:
+            triangles_pre1 = triangles_pre
+        else:
+            triangles_pre0 = self.preprocess_triangles(triangles)
+            triangles_pre1 = [pyopencl.array.concatenate((x, y))
+                              for x, y in zip(triangles_pre0, triangles_pre)]
+        if textures is None:
+            textures_pre1 = textures_pre
+        else:
+            textures_pre0 = self.preprocess_triangles(textures)
+            p0_length, p0_w, p0_h = textures_pre0[:3]
+            p_length, p_w, p_h = textures_pre0[:3]
+            length = p0_length + p_length
+            assert p0_w == p_w
+            assert p0_h == p_h
+            textures_pre0_arrays = textures_pre0[3:]
+            textures_pre_arrays = textures_pre[3:]
+            triangles_pre1_arrays = [pyopencl.array.concatenate((x, y))
+                              for x, y in zip(textures_pre0_arrays, textures_pre_arrays)]
+            triangles_pre1 = [length, p0_w, p0_h] + triangles_pre1_arrays
         return self.render_triangles_preprocessed(
             size, draw_dist, camera,
-            triangles_pre, textures_pre)
+            triangles_pre1, textures_pre1)
