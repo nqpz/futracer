@@ -8,6 +8,7 @@ program.
 Not quite finished.  Also pretty slow, and probably not getting much
 faster.
 
+*Click on the image to see a 1-minute video of futracer in action.*
 [![Video of futracer](https://hongabar.org/~niels/futracer/futracer-textured-image.jpg)](https://hongabar.org/~niels/futracer/futracer-textured.webm)
 
 
