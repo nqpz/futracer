@@ -107,7 +107,7 @@ fun close_enough
   : bool =
   close_enough' draw_dist w h (#0 triangle) ||
   close_enough' draw_dist w h (#1 triangle) ||
-  close_enough' draw_dist w h (#1 triangle)
+  close_enough' draw_dist w h (#2 triangle)
 
 fun close_enough'
   (draw_dist : f32)
