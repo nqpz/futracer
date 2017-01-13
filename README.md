@@ -5,10 +5,10 @@ Race through breathtaking 3-D graphics with Futhark!
 Run `make` to build the library, and then run `./futracer.py` to run the
 program.
 
-Not quite finished.  Also pretty slow, and probably not getting any
+Not quite finished.  Also pretty slow, and probably not getting much
 faster.
 
-[![Video of futracer](https://hongabar.org/~niels/futracer/futracer-image.jpg)](https://hongabar.org/~niels/futracer/futracer.webm)
+[![Video of futracer](https://hongabar.org/~niels/futracer/futracer-textured-image.jpg)](https://hongabar.org/~niels/futracer/futracer-textured.webm)
 
 
 ## Dependencies
