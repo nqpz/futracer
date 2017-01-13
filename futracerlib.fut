@@ -15,6 +15,10 @@ type camera = (F32.point3D, F32.angles)
 -- If surface_type == 2, use the surface from the index in #2 surface.
 type surface_type = i32
 type surface = (surface_type, hsv, i32)
+-- A double texture contains two textures: one in the upper left triangle, and
+-- one (backwards) in the lower right triangle.  Use `texture_index / 2` to
+-- refer to the correct double texture.
+type surface_double_texture = [][]hsv
 type triangle_with_surface = (triangle, surface)
 
 fun normalize_point
@@ -108,16 +112,18 @@ fun close_enough
 fun render_triangles
   (camera : camera)
   (triangles : []triangle_with_surface)
+  (surface_textures : [][texture_h][texture_w]hsv)
   (w : i32) (h : i32)
   (draw_dist : f32)
   : [w][h]pixel =
   let triangles_close =
     filter (fn t => close_enough draw_dist camera (#0 t)) triangles
-  in render_triangles' camera triangles_close w h
+  in render_triangles' camera triangles_close surface_textures w h
 
 fun render_triangles'
   (camera : camera)
   (triangles_with_surfaces : [tn]triangle_with_surface)
+  (surface_textures : [][texture_h][texture_w]hsv)
   (w : i32) (h : i32)
   : [w][h]pixel =
   let bbox_coordinates =
@@ -158,13 +164,31 @@ fun render_triangles'
                                 -- Use the color.
                                 then s_hsv
                                 else if s_t == 2
-                                then (0.0, 0.0, 0.0)
-                                -- Use the texture index
+                                -- Use the texture index.
+                                then let double_tex = unsafe surface_textures[s_ti / 2]
+                                     let ((xn0, yn0), (xn1, yn1), (xn2, yn2)) =
+                                       if s_ti & 1 == 0
+                                       then ((0.0, 0.0),
+                                             (0.0, 1.0),
+                                             (1.0, 0.0))
+                                       else ((1.0, 1.0),
+                                             (1.0, 0.0),
+                                             (0.0, 1.0))
+                                     let (an, bn, cn) = #2 bary
+                                     let yn = an * yn0 + bn * yn1 + cn * yn2
+                                     let xn = an * xn0 + bn * xn1 + cn * xn2
+                                     let yi = i32(yn * f32(texture_h))
+                                     let xi = i32(xn * f32(texture_w))
+                                     in if xi >= 0 && xi < texture_w && yi >= 0 && yi < texture_h
+                                        then unsafe double_tex[yi, xi]
+                                        else (0.0, 0.0, 0.0) -- not in triangle
                                 else (0.0, 0.0, 0.0) -- error
                               let flashlight_brightness = 2.0 * 10.0**5.0
                               let v_factor = F32.min 1.0 (flashlight_brightness
                                                           / (z ** 2.0))
-                              in (h, s, v * v_factor))
+                              in if z >= 0.0
+                                 then (h, s, v * v_factor)
+                                 else (0.0, 0.0, 0.0))
                            z_values barys surfaces)
                     z_valuess baryss
 
@@ -216,6 +240,12 @@ entry render_triangles_raw
    surface_hsv_ss : [n]f32,
    surface_hsv_vs : [n]f32,
    surface_indices : [n]i32,
+   surface_n : i32,
+   surface_w : i32,
+   surface_h : i32,
+   surface_textures_flat_hsv_hs : []f32,
+   surface_textures_flat_hsv_ss : []f32,
+   surface_textures_flat_hsv_vs : []f32,
    c_x : f32,
    c_y : f32,
    c_z : f32,
@@ -230,5 +260,9 @@ entry render_triangles_raw
   let triangles = zip p0s p1s p2s
   let surface_hsvs = zip surface_hsv_hs surface_hsv_ss surface_hsv_vs
   let surfaces = zip surface_types surface_hsvs surface_indices
+  let surface_textures = reshape (surface_n, surface_h, surface_w)
+                                 (zip surface_textures_flat_hsv_hs
+                                      surface_textures_flat_hsv_ss
+                                      surface_textures_flat_hsv_vs)
   let triangles_with_surfaces = zip triangles surfaces
-  in render_triangles camera triangles_with_surfaces w h draw_dist
+  in render_triangles camera triangles_with_surfaces surface_textures w h draw_dist

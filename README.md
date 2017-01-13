@@ -18,7 +18,7 @@ see [http://futhark-lang.org/](http://futhark-lang.org/)
 and
 [https://github.com/HIPERFIT/futhark](https://github.com/HIPERFIT/futhark).
 
-`futracer.py` also depends on PyGame and NumPy.
+`futracer.py` also depends on PyGame, PyPNG, and NumPy.
 
 
 ## Keyboard controls
