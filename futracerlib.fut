@@ -40,27 +40,26 @@ fun normalize_triangle
   in triangle'
 
 fun project_point
+  (view_dist : f32)
   (w : i32) (h : i32)
   ((x, y, z) : F32.point3D)
   : I32.point2D =
-  let view_dist = 600.0
   let z_ratio = if z >= 0.0
                 then (view_dist + z) / view_dist
                 else 1.0 / ((view_dist - z) / view_dist)
-
   let x_projected = x / z_ratio + f32 w / 2.0
   let y_projected = y / z_ratio + f32 h / 2.0
-
   in (i32 x_projected, i32 y_projected)
 
 fun project_triangle
   (w : i32) (h : i32)
   (triangle : triangle)
   : triangle_projected =
+  let view_dist = 600.0
   let ((x0, y0, z0), (x1, y1, z1), (x2, y2, z2)) = triangle
-  let (xp0, yp0) = project_point w h (x0, y0, z0)
-  let (xp1, yp1) = project_point w h (x1, y1, z1)
-  let (xp2, yp2) = project_point w h (x2, y2, z2)
+  let (xp0, yp0) = project_point view_dist w h (x0, y0, z0)
+  let (xp1, yp1) = project_point view_dist w h (x1, y1, z1)
+  let (xp2, yp2) = project_point view_dist w h (x2, y2, z2)
   let triangle_projected = ((xp0, yp0, z0), (xp1, yp1, z1), (xp2, yp2, z2))
   in triangle_projected
 
@@ -193,9 +192,7 @@ fun render_triangles'
                               let flashlight_brightness = 2.0 * 10.0**5.0
                               let v_factor = F32.min 1.0 (flashlight_brightness
                                                           / (z ** 2.0))
-                              in if z >= 0.0
-                                 then (h, s, v * v_factor)
-                                 else (0.0, 0.0, 0.0))
+                              in (h, s, v * v_factor))
                            z_values barys surfaces)
                     z_valuess baryss
 
