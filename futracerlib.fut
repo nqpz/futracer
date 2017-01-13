@@ -102,27 +102,41 @@ fun dist
 
 fun close_enough
   (draw_dist : f32)
-  ((p_camera, _) : camera)
-  (triangle : triangle)
+  (w : i32) (h : i32)
+  (triangle : triangle_projected)
   : bool =
-  (dist p_camera (#0 triangle) <= draw_dist) ||
-  (dist p_camera (#1 triangle) <= draw_dist) ||
-  (dist p_camera (#2 triangle) <= draw_dist)
+  close_enough' draw_dist w h (#0 triangle) ||
+  close_enough' draw_dist w h (#1 triangle) ||
+  close_enough' draw_dist w h (#1 triangle)
+
+fun close_enough'
+  (draw_dist : f32)
+  (w : i32) (h : i32)
+  ((x, y, z) : point_projected)
+  : bool =
+  x >= 0 && x < w && y >= 0 && y < h && z < draw_dist
 
 fun render_triangles
   (camera : camera)
-  (triangles : []triangle_with_surface)
+  (triangles_with_surfaces : []triangle_with_surface)
   (surface_textures : [][texture_h][texture_w]hsv)
   (w : i32) (h : i32)
   (draw_dist : f32)
   : [w][h]pixel =
+  let (triangles, surfaces) = unzip triangles_with_surfaces
+  let triangles_normalized = map (normalize_triangle camera)
+                                 triangles
+  let triangles_projected = map (project_triangle w h)
+                                triangles_normalized
   let triangles_close =
-    filter (fn t => close_enough draw_dist camera (#0 t)) triangles
-  in render_triangles' camera triangles_close surface_textures w h
+    filter (fn t => close_enough draw_dist w h (#0 t))
+           (zip triangles_projected surfaces)
+  let (triangles_projected', surfaces') = unzip triangles_close
+  in render_triangles' triangles_projected' surfaces' surface_textures w h
 
 fun render_triangles'
-  (camera : camera)
-  (triangles_with_surfaces : [tn]triangle_with_surface)
+  (triangles_projected : [tn]triangle_projected)
+  (surfaces : [tn]surface)
   (surface_textures : [][texture_h][texture_w]hsv)
   (w : i32) (h : i32)
   : [w][h]pixel =
@@ -133,13 +147,6 @@ fun render_triangles'
                    (x, y))
                 (iota h))
          (iota w))
-
-  let (triangles, surfaces) = unzip triangles_with_surfaces
-  let triangles_normalized = map (normalize_triangle camera)
-                                 triangles
-
-  let triangles_projected = map (project_triangle w h)
-                                triangles_normalized
 
   let baryss = map (fn (p : I32.point2D) : [tn]point_barycentric =>
                       map (barycentric_coordinates p)
