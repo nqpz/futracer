@@ -5,14 +5,12 @@ import os.path
 import math
 import random
 import argparse
-import itertools
 import time
-import colorsys
 
 import pygame
-import numpy
 
 import futracer
+
 
 class FutCubes:
     def __init__(self, size=None, n_cubes=None, just_colors=False):
@@ -63,9 +61,6 @@ class FutCubes:
         s5 = [[self.racer.rotate_point((-math.pi / 2, 0.0, 0.0), origo, p) for p in t]
               for t in s0]
         half_cube_0 = s0 + s1 + s2 + s3 + s4 + s5
-
-        half_cube_0 = [[tuple(numpy.float32(x) for x in p) for p in t]
-                       for t in half_cube_0]
 
         if square_texture is not None:
             textures = [square_texture]
