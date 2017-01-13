@@ -74,7 +74,7 @@ class FutRacer:
         s_indices = self.to_device((s[2] for s in ss), 'int32')
 
         return (x0s, y0s, z0s, x1s, y1s, z1s, x2s, y2s, z2s,
-                s_types, s_hsv_vs, s_hsv_ss, s_hsv_vs, s_indices)
+                s_types, s_hsv_hs, s_hsv_ss, s_hsv_vs, s_indices)
 
     def load_double_texture(self, path):
         texture_raw = png.Reader(filename=path)
