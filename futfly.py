@@ -24,7 +24,7 @@ class FutFly:
     def fly(self):
         # Setup pygame.
         pygame.init()
-        pygame.display.set_caption('futcubes')
+        pygame.display.set_caption('futfly')
         self.screen = pygame.display.set_mode(self.size)
         self.font = pygame.font.Font(None, 36)
         self.clock = pygame.time.Clock()
