@@ -135,7 +135,7 @@ fun render_triangles
   let triangles_projected = map (project_triangle w h)
                                 triangles_normalized
   let triangles_close =
-    filter (fn t => close_enough draw_dist w h (#0 t))
+    filter (\t -> close_enough draw_dist w h (#0 t))
            (zip triangles_projected surfaces)
   let (triangles_projected', surfaces') = unzip triangles_close
   in render_triangles' triangles_projected' surfaces' surface_textures w h
@@ -148,30 +148,30 @@ fun render_triangles'
   : [w][h]pixel =
   let bbox_coordinates =
     reshape (w * h)
-    (map (fn (x : i32) : [h](i32, i32) =>
-            map (fn (y : i32) : (i32, i32) =>
+    (map (\(x : i32) : [h](i32, i32) ->
+            map (\(y : i32) : (i32, i32) ->
                    (x, y))
                 (iota h))
          (iota w))
 
-  let baryss = map (fn (p : I32.point2D) : [tn]point_barycentric =>
+  let baryss = map (\(p : I32.point2D) : [tn]point_barycentric ->
                       map (barycentric_coordinates p)
                           triangles_projected)
                    bbox_coordinates
 
-  let is_insidess = map (fn (barys : [tn]point_barycentric) : [tn]bool =>
+  let is_insidess = map (\(barys : [tn]point_barycentric) : [tn]bool ->
                            map is_inside_triangle barys)
                        baryss
 
-  let z_valuess = map (fn (barys : [tn]point_barycentric) : [tn]f32 =>
+  let z_valuess = map (\(barys : [tn]point_barycentric) : [tn]f32 ->
                          map interpolate_z triangles_projected barys)
                       baryss
 
-  let colorss = map (fn (z_values : [tn]f32)
-                        (barys : [tn]point_barycentric)
-                        : [tn]hsv =>
-                       map (fn (z : f32) (bary : point_barycentric)
-                               ((s_t, s_hsv, s_ti) : surface) : hsv =>
+  let colorss = map (\(z_values : [tn]f32)
+                      (barys : [tn]point_barycentric)
+                      : [tn]hsv ->
+                       map (\(z : f32) (bary : point_barycentric)
+                             ((s_t, s_hsv, s_ti) : surface) : hsv ->
                               let (h, s, v) =
                                 if s_t == 1
                                 -- Use the color.
@@ -204,16 +204,16 @@ fun render_triangles'
                     z_valuess baryss
 
   let (_mask, _z_values, colors) =
-    unzip (map (fn (is_insides : [tn]bool)
-                   (z_values : [tn]f32)
-                   (colors : [tn]hsv)
-                   : (bool, f32, hsv) =>
+    unzip (map (\(is_insides : [tn]bool)
+                 (z_values : [tn]f32)
+                 (colors : [tn]hsv)
+                 : (bool, f32, hsv) ->
                   let neutral_element = (false, -1.0, (0.0, 0.0, 0.0)) in
-                  (reduce (fn ((in_triangle0, z0, hsv0)
-                               : (bool, f32, hsv))
-                              ((in_triangle1, z1, hsv1)
-                               : (bool, f32, hsv))
-                              : (bool, f32, hsv) =>
+                  (reduce (\((in_triangle0, z0, hsv0)
+                             : (bool, f32, hsv))
+                            ((in_triangle1, z1, hsv1)
+                             : (bool, f32, hsv))
+                            : (bool, f32, hsv) ->
                              if (in_triangle0 && z0 >= 0.0 &&
                                  (z1 < 0.0 || !in_triangle1 || z0 < z1))
                              then (true, z0, hsv0)
@@ -228,7 +228,7 @@ fun render_triangles'
                           (zip is_insides z_values colors)))
                is_insidess z_valuess colorss)
 
-  let pixels = map (fn x => rgb_to_pixel (hsv_to_rgb x)) colors
+  let pixels = map (\x -> rgb_to_pixel (hsv_to_rgb x)) colors
   let frame = reshape (w, h) pixels
   in frame
 
