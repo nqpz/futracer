@@ -104,16 +104,23 @@ fun close_enough
   (w : i32) (h : i32)
   (triangle : triangle_projected)
   : bool =
-  close_enough' draw_dist w h (#0 triangle) ||
-  close_enough' draw_dist w h (#1 triangle) ||
-  close_enough' draw_dist w h (#2 triangle)
+  (close_enough_dist draw_dist (#0 triangle) ||
+   close_enough_dist draw_dist (#1 triangle) ||
+   close_enough_dist draw_dist (#2 triangle)) &&
+  (!close_enough_fully_out_of_frame w h triangle)
 
-fun close_enough'
+fun close_enough_dist
   (draw_dist : f32)
-  (w : i32) (h : i32)
-  ((x, y, z) : point_projected)
+  ((_x, _y, z) : point_projected)
   : bool =
-  x >= 0 && x < w && y >= 0 && y < h && z < draw_dist
+  0.0 <= z && z < draw_dist
+
+fun close_enough_fully_out_of_frame
+  (w : i32) (h : i32)
+  (((x0, y0, _z0), (x1, y1, _z1), (x2, y2, _z2)) : triangle_projected)
+  : bool =
+  (x0 < 0 && x1 < 0 && x2 < 0) || (x0 >= w && x1 >= w && x2 >= w) ||
+  (y0 < 0 && y1 < 0 && y2 < 0) || (y0 >= h && y1 >= h && y2 >= h)
 
 fun render_triangles
   (camera : camera)
