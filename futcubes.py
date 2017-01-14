@@ -14,13 +14,13 @@ import futracer
 
 class FutCubes:
     def __init__(self, size=None, n_cubes=None, just_colors=False):
+        if size is None:
+            size = (800, 600)
         self.size = size
         if n_cubes is None:
             n_cubes = 2000
         self.n_cubes = n_cubes
         self.just_colors = just_colors
-        if self.size is None:
-            self.size = (800, 600)
         self.draw_dist = 800.0
 
     def run(self):
