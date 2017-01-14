@@ -2,8 +2,8 @@
 
 Race through breathtaking 3-D graphics with Futhark!
 
-Run `make` to build the library, and then run `./futcubes.py` to run the
-program.
+Run `make` to build the library, and then run `./futcubes.py` or
+`./futfly.py` to run the example programs.
 
 Not quite finished.  Also pretty slow, and probably not getting much
 faster.
