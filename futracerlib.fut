@@ -213,23 +213,23 @@ fun render_triangles'
                  (colors : [tn]hsv)
                  : (bool, f32, hsv) ->
                   let neutral_element = (false, -1.0, (0.0, 0.0, 0.0)) in
-                  (reduce (\((in_triangle0, z0, hsv0)
-                             : (bool, f32, hsv))
-                            ((in_triangle1, z1, hsv1)
-                             : (bool, f32, hsv))
-                            : (bool, f32, hsv) ->
-                             if (in_triangle0 && z0 >= 0.0 &&
-                                 (z1 < 0.0 || !in_triangle1 || z0 < z1))
-                             then (true, z0, hsv0)
-                             else if (in_triangle1 && z1 >= 0.0 &&
-                                      (z0 < 0.0 || !in_triangle0 || z1 < z0))
-                             then (true, z1, hsv1)
-                             else if (in_triangle0 && z0 > 0.0 &&
-                                      in_triangle1 && z1 > 0.0 && z0 == z1)
-                             then (true, z0, hsv_average hsv0 hsv1)
-                             else neutral_element)
-                          neutral_element
-                          (zip is_insides z_values colors)))
+                  (reduceComm (\((in_triangle0, z0, hsv0)
+                                 : (bool, f32, hsv))
+                                ((in_triangle1, z1, hsv1)
+                                 : (bool, f32, hsv))
+                                : (bool, f32, hsv) ->
+                                 if (in_triangle0 && z0 >= 0.0 &&
+                                     (z1 < 0.0 || !in_triangle1 || z0 < z1))
+                                 then (true, z0, hsv0)
+                                 else if (in_triangle1 && z1 >= 0.0 &&
+                                          (z0 < 0.0 || !in_triangle0 || z1 < z0))
+                                 then (true, z1, hsv1)
+                                 else if (in_triangle0 && z0 > 0.0 &&
+                                          in_triangle1 && z1 > 0.0 && z0 == z1)
+                                 then (true, z0, hsv_average hsv0 hsv1)
+                                 else neutral_element)
+                              neutral_element
+                              (zip is_insides z_values colors)))
                is_insidess z_valuess colorss)
 
   let pixels = map (\x -> rgb_to_pixel (hsv_to_rgb x)) colors
