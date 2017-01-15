@@ -9,7 +9,10 @@ Not quite finished.  Also pretty slow, and probably not getting much
 faster.
 
 *Click on the image to see a 1-minute video of `futcubes.py` in action.*
-[![Video of futracer](https://hongabar.org/~niels/futracer/futracer-textured-image.jpg)](https://hongabar.org/~niels/futracer/futracer-textured.webm)
+[![Video of futcubes](https://hongabar.org/~niels/futracer/futracer-textured-image.jpg)](https://hongabar.org/~niels/futracer/futracer-textured.webm)
+
+*Click on the image to see a 1-minute video of `futfly.py` in action.*
+[![Video of futfly](https://hongabar.org/~niels/futracer/futracer-futfly-image.jpg)](https://hongabar.org/~niels/futracer/futracer-futfly.webm)
 
 
 ## Dependencies

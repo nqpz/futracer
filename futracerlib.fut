@@ -203,6 +203,10 @@ fun render_triangles'
                            z_values barys surfaces)
                     z_valuess baryss
 
+  -- Possible improvement: The code below compares each triangle with every
+  -- pixel.  It might be faster to only compare it with the pixels of its square
+  -- bounding box, and do so in a loop and with 'write', although in that case
+  -- some of the above code might also have to be changed.
   let (_mask, _z_values, colors) =
     unzip (map (\(is_insides : [tn]bool)
                  (z_values : [tn]f32)
