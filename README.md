@@ -22,7 +22,7 @@ see [http://futhark-lang.org/](http://futhark-lang.org/)
 and
 [https://github.com/HIPERFIT/futhark](https://github.com/HIPERFIT/futhark).
 
-futracer also depends on PyGame, PyPNG, and NumPy.
+futracer also depends on PyGame, PyPNG (only futcubes), and NumPy.
 
 
 ## Keyboard controls
