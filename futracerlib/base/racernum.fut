@@ -1,4 +1,4 @@
-module type RACERNUM {
+module type RACERNUM = {
   type t
 
   val min : t -> t -> t
@@ -7,7 +7,7 @@ module type RACERNUM {
   val mod : t -> t -> t
 }
 
-module RacerNumExtra (N : RACERNUM) {
+module RacerNumExtra (N : RACERNUM) = {
   type t = N.t
 
   fun min (a : t) (b : t) : t = N.min a b

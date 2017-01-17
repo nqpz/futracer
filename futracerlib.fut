@@ -107,7 +107,7 @@ fun close_enough
   (close_enough_dist draw_dist (#0 triangle) ||
    close_enough_dist draw_dist (#1 triangle) ||
    close_enough_dist draw_dist (#2 triangle)) &&
-  (!close_enough_fully_out_of_frame w h triangle)
+  !(close_enough_fully_out_of_frame w h triangle)
 
 fun close_enough_dist
   (draw_dist : f32)
