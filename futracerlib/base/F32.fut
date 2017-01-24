@@ -2,7 +2,7 @@ include futracerlib.base.racernum
 
 default (i32, f32)
 
-module F32 = RacerNumExtra(  {
+module F32Extra = RacerNumExtra(  {
   type t = f32
 
   fun min (a : t) (b : t) : t =

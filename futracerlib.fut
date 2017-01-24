@@ -5,11 +5,11 @@ include futracerlib.color
 
 default (i32, f32)
 
-type triangle = (F32.point3D, F32.point3D, F32.point3D)
+type triangle = (F32Extra.point3D, F32Extra.point3D, F32Extra.point3D)
 type point_projected = (i32, i32, f32)
 type triangle_projected = (point_projected, point_projected, point_projected)
-type point_barycentric = (i32, I32.point3D, F32.point3D)
-type camera = (F32.point3D, F32.angles)
+type point_barycentric = (i32, I32Extra.point3D, F32Extra.point3D)
+type camera = (F32Extra.point3D, F32Extra.angles)
 
 -- If surface_type == 1, use the color in #1 surface.
 -- If surface_type == 2, use the surface from the index in #2 surface.
@@ -23,8 +23,8 @@ type triangle_with_surface = (triangle, surface)
 
 fun normalize_point
   (((xc, yc, zc), (ax, ay, az)) : camera)
-  (p0 : F32.point3D)
-  : F32.point3D =
+  (p0 : F32Extra.point3D)
+  : F32Extra.point3D =
       let p1 = (translate_point (-xc, -yc, -zc) p0)
       let p2 = rotate_point (-ax, -ay, -az) (0.0, 0.0, 0.0) p1
       in p2
@@ -42,8 +42,8 @@ fun normalize_triangle
 fun project_point
   (view_dist : f32)
   (w : i32) (h : i32)
-  ((x, y, z) : F32.point3D)
-  : I32.point2D =
+  ((x, y, z) : F32Extra.point3D)
+  : I32Extra.point2D =
   let z_ratio = if z >= 0.0
                 then (view_dist + z) / view_dist
                 else 1.0 / ((view_dist - z) / view_dist)
@@ -67,7 +67,7 @@ fun in_range (t : i32) (a : i32) (b : i32) : bool =
   (a < b && a <= t && t <= b) || (b <= a && b <= t && t <= a)
 
 fun barycentric_coordinates
-  ((x, y) : I32.point2D)
+  ((x, y) : I32Extra.point2D)
   (triangle : triangle_projected)
   : point_barycentric =
   let ((xp0, yp0, _z0), (xp1, yp1, _z1), (xp2, yp2, _z2)) = triangle
@@ -94,10 +94,10 @@ fun interpolate_z
   in an * z0 + bn * z1 + cn * z2
 
 fun dist
-  ((x0, y0, z0) : F32.point3D)
-  ((x1, y1, z1) : F32.point3D)
+  ((x0, y0, z0) : F32Extra.point3D)
+  ((x1, y1, z1) : F32Extra.point3D)
   : f32 =
-  sqrt32((x1 - x0)**2.0 + (y1 - y0)**2.0 + (z1 - z0)**2.0)
+  F32.sqrt((x1 - x0)**2.0 + (y1 - y0)**2.0 + (z1 - z0)**2.0)
 
 fun close_enough
   (draw_dist : f32)
@@ -154,7 +154,7 @@ fun render_triangles'
                 (iota h))
          (iota w))
 
-  let baryss = map (\(p : I32.point2D) : [tn]point_barycentric ->
+  let baryss = map (\(p : I32Extra.point2D) : [tn]point_barycentric ->
                       map (barycentric_coordinates p)
                           triangles_projected)
                    bbox_coordinates
@@ -197,7 +197,7 @@ fun render_triangles'
                                         else (0.0, 0.0, 0.0) -- not in triangle
                                 else (0.0, 0.0, 0.0) -- error
                               let flashlight_brightness = 2.0 * 10.0**5.0
-                              let v_factor = F32.min 1.0 (flashlight_brightness
+                              let v_factor = F32Extra.min 1.0 (flashlight_brightness
                                                           / (z ** 2.0))
                               in (h, s, v * v_factor))
                            z_values barys surfaces)

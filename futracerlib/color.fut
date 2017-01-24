@@ -25,7 +25,7 @@ fun rgb_to_pixel (r : pixel_channel, g : pixel_channel, b : pixel_channel) : pix
 fun hsv_to_rgb ((h, s, v) : hsv) : rgb =
   let c = v * s
   let h' = h / 60.0
-  let x = c * (1.0 - F32.abl (F32.mod h' 2.0 - 1.0))
+  let x = c * (1.0 - F32Extra.abl (F32Extra.mod h' 2.0 - 1.0))
   let (r0, g0, b0) = if 0.0 <= h' && h' < 1.0
                      then (c, x, 0.0)
                      else if 1.0 <= h' && h' < 2.0
@@ -52,7 +52,7 @@ fun hsv_average
   let diff_b = h0 + 360.0 - h1
   let h = if diff_a < diff_b
           then h0 + diff_a / 2.0
-          else F32.mod (h1 + diff_b / 2.0) 360.0
+          else F32Extra.mod (h1 + diff_b / 2.0) 360.0
   let s = (s0 + s1) / 2.0
   let v = (v0 + v1) / 2.0
   in (h, s, v)

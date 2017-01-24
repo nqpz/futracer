@@ -3,15 +3,15 @@ include futracerlib.base.F32
 default (i32, f32)
 
 fun rotate_point
-  ((angle_x, angle_y, angle_z) : F32.angles)
-  ((x_origo, y_origo, z_origo) : F32.point3D)
-  ((x, y, z) : F32.point3D)
-  : F32.point3D =
+  ((angle_x, angle_y, angle_z) : F32Extra.angles)
+  ((x_origo, y_origo, z_origo) : F32Extra.point3D)
+  ((x, y, z) : F32Extra.point3D)
+  : F32Extra.point3D =
   let (x0, y0, z0) = (x - x_origo, y - y_origo, z - z_origo)
 
-  let (sin_x, cos_x) = (sin32 angle_x, cos32 angle_x)
-  let (sin_y, cos_y) = (sin32 angle_y, cos32 angle_y)
-  let (sin_z, cos_z) = (sin32 angle_z, cos32 angle_z)
+  let (sin_x, cos_x) = (F32.sin angle_x, F32.cos angle_x)
+  let (sin_y, cos_y) = (F32.sin angle_y, F32.cos angle_y)
+  let (sin_z, cos_z) = (F32.sin angle_z, F32.cos angle_z)
 
   -- X axis.
   let (x1, y1, z1) = (x0,
@@ -30,9 +30,9 @@ fun rotate_point
   in (x', y', z')
 
 fun translate_point
-  ((x_move, y_move, z_move) : F32.point3D)
-  ((x, y, z) : F32.point3D)
-  : F32.point3D =
+  ((x_move, y_move, z_move) : F32Extra.point3D)
+  ((x, y, z) : F32Extra.point3D)
+  : F32Extra.point3D =
   (x + x_move, y + y_move, z + z_move)
 
 entry rotate_point_raw
