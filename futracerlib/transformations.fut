@@ -1,4 +1,5 @@
-include futracerlib.base.F32
+import "futlib/numeric"
+import "futracerlib/base/F32"
 
 default (i32, f32)
 
@@ -9,9 +10,9 @@ fun rotate_point
   : F32Extra.point3D =
   let (x0, y0, z0) = (x - x_origo, y - y_origo, z - z_origo)
 
-  let (sin_x, cos_x) = (F32.sin angle_x, F32.cos angle_x)
-  let (sin_y, cos_y) = (F32.sin angle_y, F32.cos angle_y)
-  let (sin_z, cos_z) = (F32.sin angle_z, F32.cos angle_z)
+  let (sin_x, cos_x) = (f32.sin angle_x, f32.cos angle_x)
+  let (sin_y, cos_y) = (f32.sin angle_y, f32.cos angle_y)
+  let (sin_z, cos_z) = (f32.sin angle_z, f32.cos angle_z)
 
   -- X axis.
   let (x1, y1, z1) = (x0,

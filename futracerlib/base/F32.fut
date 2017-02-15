@@ -1,4 +1,4 @@
-include futracerlib.base.racernum
+import "futracerlib/base/racernum"
 
 default (i32, f32)
 

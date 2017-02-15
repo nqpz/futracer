@@ -1,7 +1,7 @@
-include futracerlib.base.F32
-include futracerlib.base.I32
-include futracerlib.transformations
-include futracerlib.color
+import "futracerlib/base/F32"
+import "futracerlib/base/I32"
+import "futracerlib/transformations"
+import "futracerlib/color"
 
 default (i32, f32)
 
@@ -97,7 +97,7 @@ fun dist
   ((x0, y0, z0) : F32Extra.point3D)
   ((x1, y1, z1) : F32Extra.point3D)
   : f32 =
-  F32.sqrt((x1 - x0)**2.0 + (y1 - y0)**2.0 + (z1 - z0)**2.0)
+  f32.sqrt((x1 - x0)**2.0 + (y1 - y0)**2.0 + (z1 - z0)**2.0)
 
 fun close_enough
   (draw_dist : f32)

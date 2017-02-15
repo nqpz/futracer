@@ -1,4 +1,4 @@
-include futracerlib.base.F32
+import "futracerlib/base/F32"
 
 default (i32, f32)
 
