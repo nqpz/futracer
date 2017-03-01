@@ -1,4 +1,4 @@
-import "futlib/numeric"
+import "futlib/math"
 import "futracerlib/base/racernum"
 
 default (i32, f32)

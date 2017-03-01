@@ -104,9 +104,9 @@ fun close_enough
   (w : i32) (h : i32)
   (triangle : triangle_projected)
   : bool =
-  (close_enough_dist draw_dist (#0 triangle) ||
-   close_enough_dist draw_dist (#1 triangle) ||
-   close_enough_dist draw_dist (#2 triangle)) &&
+  (close_enough_dist draw_dist (#1 triangle) ||
+   close_enough_dist draw_dist (#2 triangle) ||
+   close_enough_dist draw_dist (#3 triangle)) &&
   !(close_enough_fully_out_of_frame w h triangle)
 
 fun close_enough_dist
@@ -135,7 +135,7 @@ fun render_triangles
   let triangles_projected = map (project_triangle w h)
                                 triangles_normalized
   let triangles_close =
-    filter (\t -> close_enough draw_dist w h (#0 t))
+    filter (\t -> close_enough draw_dist w h (#1 t))
            (zip triangles_projected surfaces)
   let (triangles_projected', surfaces') = unzip triangles_close
   in render_triangles' triangles_projected' surfaces' surface_textures w h
@@ -187,7 +187,7 @@ fun render_triangles'
                                        else ((1.0, 1.0),
                                              (1.0, 0.0),
                                              (0.0, 1.0))
-                                     let (an, bn, cn) = #2 bary
+                                     let (an, bn, cn) = #3 bary
                                      let yn = an * yn0 + bn * yn1 + cn * yn2
                                      let xn = an * xn0 + bn * xn1 + cn * xn2
                                      let yi = i32(yn * f32(texture_h))
