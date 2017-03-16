@@ -99,16 +99,6 @@ fun dist
   : f32 =
   f32.sqrt((x1 - x0)**2.0 + (y1 - y0)**2.0 + (z1 - z0)**2.0)
 
-fun close_enough
-  (draw_dist : f32)
-  (w : i32) (h : i32)
-  (triangle : triangle_projected)
-  : bool =
-  (close_enough_dist draw_dist (#1 triangle) ||
-   close_enough_dist draw_dist (#2 triangle) ||
-   close_enough_dist draw_dist (#3 triangle)) &&
-  !(close_enough_fully_out_of_frame w h triangle)
-
 fun close_enough_dist
   (draw_dist : f32)
   ((_x, _y, z) : point_projected)
@@ -122,23 +112,15 @@ fun close_enough_fully_out_of_frame
   (x0 < 0 && x1 < 0 && x2 < 0) || (x0 >= w && x1 >= w && x2 >= w) ||
   (y0 < 0 && y1 < 0 && y2 < 0) || (y0 >= h && y1 >= h && y2 >= h)
 
-fun render_triangles
-  (camera : camera)
-  (triangles_with_surfaces : []triangle_with_surface)
-  (surface_textures : [][texture_h][texture_w]hsv)
-  (w : i32) (h : i32)
+fun close_enough
   (draw_dist : f32)
-  : [w][h]pixel =
-  let (triangles, surfaces) = unzip triangles_with_surfaces
-  let triangles_normalized = map (normalize_triangle camera)
-                                 triangles
-  let triangles_projected = map (project_triangle w h)
-                                triangles_normalized
-  let triangles_close =
-    filter (\t -> close_enough draw_dist w h (#1 t))
-           (zip triangles_projected surfaces)
-  let (triangles_projected', surfaces') = unzip triangles_close
-  in render_triangles' triangles_projected' surfaces' surface_textures w h
+  (w : i32) (h : i32)
+  (triangle : triangle_projected)
+  : bool =
+  (close_enough_dist draw_dist (#1 triangle) ||
+   close_enough_dist draw_dist (#2 triangle) ||
+   close_enough_dist draw_dist (#3 triangle)) &&
+  !(close_enough_fully_out_of_frame w h triangle)
 
 fun render_triangles'
   (triangles_projected : [tn]triangle_projected)
@@ -235,6 +217,25 @@ fun render_triangles'
   let pixels = map (\x -> rgb_to_pixel (hsv_to_rgb x)) colors
   let frame = reshape (w, h) pixels
   in frame
+
+
+fun render_triangles
+  (camera : camera)
+  (triangles_with_surfaces : []triangle_with_surface)
+  (surface_textures : [][texture_h][texture_w]hsv)
+  (w : i32) (h : i32)
+  (draw_dist : f32)
+  : [w][h]pixel =
+  let (triangles, surfaces) = unzip triangles_with_surfaces
+  let triangles_normalized = map (normalize_triangle camera)
+                                 triangles
+  let triangles_projected = map (project_triangle w h)
+                                triangles_normalized
+  let triangles_close =
+    filter (\t -> close_enough draw_dist w h (#1 t))
+           (zip triangles_projected surfaces)
+  let (triangles_projected', surfaces') = unzip triangles_close
+  in render_triangles' triangles_projected' surfaces' surface_textures w h
 
 entry render_triangles_raw
   (
