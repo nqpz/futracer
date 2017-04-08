@@ -21,7 +21,7 @@ type surface = (surface_type, hsv, i32)
 type surface_double_texture = [][]hsv
 type triangle_with_surface = (triangle, surface)
 
-fun normalize_point
+let normalize_point
   (((xc, yc, zc), (ax, ay, az)) : camera)
   (p0 : F32Extra.point3D)
   : F32Extra.point3D =
@@ -29,7 +29,7 @@ fun normalize_point
       let p2 = rotate_point (-ax, -ay, -az) (0.0, 0.0, 0.0) p1
       in p2
 
-fun normalize_triangle
+let normalize_triangle
   (camera : camera)
   ((p0, p1, p2) : triangle)
   : triangle =
@@ -39,7 +39,7 @@ fun normalize_triangle
   let triangle' = (p0n, p1n, p2n)
   in triangle'
 
-fun project_point
+let project_point
   (view_dist : f32)
   (w : i32) (h : i32)
   ((x, y, z) : F32Extra.point3D)
@@ -51,7 +51,7 @@ fun project_point
   let y_projected = y / z_ratio + f32 h / 2.0
   in (i32 x_projected, i32 y_projected)
 
-fun project_triangle
+let project_triangle
   (w : i32) (h : i32)
   (triangle : triangle)
   : triangle_projected =
@@ -63,10 +63,10 @@ fun project_triangle
   let triangle_projected = ((xp0, yp0, z0), (xp1, yp1, z1), (xp2, yp2, z2))
   in triangle_projected
 
-fun in_range (t : i32) (a : i32) (b : i32) : bool =
+let in_range (t : i32) (a : i32) (b : i32) : bool =
   (a < b && a <= t && t <= b) || (b <= a && b <= t && t <= a)
 
-fun barycentric_coordinates
+let barycentric_coordinates
   ((x, y) : I32Extra.point2D)
   (triangle : triangle_projected)
   : point_barycentric =
@@ -81,69 +81,51 @@ fun barycentric_coordinates
   let cn = 1.0 - an - bn
   in (factor, (a, b, c), (an, bn, cn))
 
-fun is_inside_triangle
+let is_inside_triangle
   ((factor, (a, b, c), (_an, _bn, _cn)) : point_barycentric)
   : bool =
   in_range a 0 factor && in_range b 0 factor && in_range c 0 factor
 
-fun interpolate_z
+let interpolate_z
   (triangle : triangle_projected)
   ((_factor, (_a, _b, _c), (an, bn, cn)) : point_barycentric)
   : f32 =
   let ((_xp0, _yp0, z0), (_xp1, _yp1, z1), (_xp2, _yp2, z2)) = triangle
   in an * z0 + bn * z1 + cn * z2
 
-fun dist
+let dist
   ((x0, y0, z0) : F32Extra.point3D)
   ((x1, y1, z1) : F32Extra.point3D)
   : f32 =
   f32.sqrt((x1 - x0)**2.0 + (y1 - y0)**2.0 + (z1 - z0)**2.0)
 
-fun close_enough
-  (draw_dist : f32)
-  (w : i32) (h : i32)
-  (triangle : triangle_projected)
-  : bool =
-  (close_enough_dist draw_dist (#0 triangle) ||
-   close_enough_dist draw_dist (#1 triangle) ||
-   close_enough_dist draw_dist (#2 triangle)) &&
-  !(close_enough_fully_out_of_frame w h triangle)
-
-fun close_enough_dist
+let close_enough_dist
   (draw_dist : f32)
   ((_x, _y, z) : point_projected)
   : bool =
   0.0 <= z && z < draw_dist
 
-fun close_enough_fully_out_of_frame
+let close_enough_fully_out_of_frame
   (w : i32) (h : i32)
   (((x0, y0, _z0), (x1, y1, _z1), (x2, y2, _z2)) : triangle_projected)
   : bool =
   (x0 < 0 && x1 < 0 && x2 < 0) || (x0 >= w && x1 >= w && x2 >= w) ||
   (y0 < 0 && y1 < 0 && y2 < 0) || (y0 >= h && y1 >= h && y2 >= h)
 
-fun render_triangles
-  (camera : camera)
-  (triangles_with_surfaces : []triangle_with_surface)
-  (surface_textures : [][texture_h][texture_w]hsv)
-  (w : i32) (h : i32)
+let close_enough
   (draw_dist : f32)
-  : [w][h]pixel =
-  let (triangles, surfaces) = unzip triangles_with_surfaces
-  let triangles_normalized = map (normalize_triangle camera)
-                                 triangles
-  let triangles_projected = map (project_triangle w h)
-                                triangles_normalized
-  let triangles_close =
-    filter (\t -> close_enough draw_dist w h (#0 t))
-           (zip triangles_projected surfaces)
-  let (triangles_projected', surfaces') = unzip triangles_close
-  in render_triangles' triangles_projected' surfaces' surface_textures w h
+  (w : i32) (h : i32)
+  (triangle : triangle_projected)
+  : bool =
+  (close_enough_dist draw_dist (#1 triangle) ||
+   close_enough_dist draw_dist (#2 triangle) ||
+   close_enough_dist draw_dist (#3 triangle)) &&
+  !(close_enough_fully_out_of_frame w h triangle)
 
-fun render_triangles'
-  (triangles_projected : [tn]triangle_projected)
-  (surfaces : [tn]surface)
-  (surface_textures : [][texture_h][texture_w]hsv)
+let render_triangles'
+  (triangles_projected : [#tn]triangle_projected)
+  (surfaces : [#tn]surface)
+  (surface_textures : [][#texture_h][#texture_w]hsv)
   (w : i32) (h : i32)
   : [w][h]pixel =
   let bbox_coordinates =
@@ -187,7 +169,7 @@ fun render_triangles'
                                        else ((1.0, 1.0),
                                              (1.0, 0.0),
                                              (0.0, 1.0))
-                                     let (an, bn, cn) = #2 bary
+                                     let (an, bn, cn) = #3 bary
                                      let yn = an * yn0 + bn * yn1 + cn * yn2
                                      let xn = an * xn0 + bn * xn1 + cn * xn2
                                      let yi = i32(yn * f32(texture_h))
@@ -213,7 +195,7 @@ fun render_triangles'
                  (colors : [tn]hsv)
                  : (bool, f32, hsv) ->
                   let neutral_element = (false, -1.0, (0.0, 0.0, 0.0)) in
-                  (reduceComm (\((in_triangle0, z0, hsv0)
+                  (reduce_comm (\((in_triangle0, z0, hsv0)
                                  : (bool, f32, hsv))
                                 ((in_triangle1, z1, hsv1)
                                  : (bool, f32, hsv))
@@ -236,25 +218,43 @@ fun render_triangles'
   let frame = reshape (w, h) pixels
   in frame
 
+let render_triangles
+  (camera : camera)
+  (triangles_with_surfaces : []triangle_with_surface)
+  (surface_textures : [][#texture_h][#texture_w]hsv)
+  (w : i32) (h : i32)
+  (draw_dist : f32)
+  : [w][h]pixel =
+  let (triangles, surfaces) = unzip triangles_with_surfaces
+  let triangles_normalized = map (normalize_triangle camera)
+                                 triangles
+  let triangles_projected = map (project_triangle w h)
+                                triangles_normalized
+  let triangles_close =
+    filter (\t -> close_enough draw_dist w h (#1 t))
+           (zip triangles_projected surfaces)
+  let (triangles_projected', surfaces') = unzip triangles_close
+  in render_triangles' triangles_projected' surfaces' surface_textures w h
+
 entry render_triangles_raw
   (
    w : i32,
    h : i32,
    draw_dist : f32,
-   x0s : [n]f32,
-   y0s : [n]f32,
-   z0s : [n]f32,
-   x1s : [n]f32,
-   y1s : [n]f32,
-   z1s : [n]f32,
-   x2s : [n]f32,
-   y2s : [n]f32,
-   z2s : [n]f32,
-   surface_types : [n]surface_type,
-   surface_hsv_hs : [n]f32,
-   surface_hsv_ss : [n]f32,
-   surface_hsv_vs : [n]f32,
-   surface_indices : [n]i32,
+   x0s : [#n]f32,
+   y0s : [#n]f32,
+   z0s : [#n]f32,
+   x1s : [#n]f32,
+   y1s : [#n]f32,
+   z1s : [#n]f32,
+   x2s : [#n]f32,
+   y2s : [#n]f32,
+   z2s : [#n]f32,
+   surface_types : [#n]surface_type,
+   surface_hsv_hs : [#n]f32,
+   surface_hsv_ss : [#n]f32,
+   surface_hsv_vs : [#n]f32,
+   surface_indices : [#n]i32,
    surface_n : i32,
    surface_w : i32,
    surface_h : i32,
