@@ -1,6 +1,6 @@
 import "futlib/math"
 
-import "futracerlib/racer"
+import "futracerlib/misc"
 
 default (i32, f32)
 
@@ -9,22 +9,22 @@ type pixel_channel = u32
 type rgb = (pixel_channel, pixel_channel, pixel_channel)
 type hsv = (f32, f32, f32)
 
-fun pixel_get_r (p: pixel): pixel_channel =
+let pixel_get_r (p: pixel): pixel_channel =
   (p >> 16u32) & 255u32
 
-fun pixel_get_g (p: pixel): pixel_channel =
+let pixel_get_g (p: pixel): pixel_channel =
   (p >> 8u32) & 255u32
 
-fun pixel_get_b (p: pixel): pixel_channel =
+let pixel_get_b (p: pixel): pixel_channel =
   p & 255u32
 
-fun pixel_to_rgb (p: pixel): (pixel_channel, pixel_channel, pixel_channel) =
+let pixel_to_rgb (p: pixel): (pixel_channel, pixel_channel, pixel_channel) =
   (pixel_get_r p, pixel_get_g p, pixel_get_b p)
 
-fun rgb_to_pixel (r: pixel_channel, g: pixel_channel, b: pixel_channel): pixel =
+let rgb_to_pixel (r: pixel_channel, g: pixel_channel, b: pixel_channel): pixel =
   (r << 16u32) | (g << 8u32) | b
 
-fun hsv_to_rgb ((h, s, v): hsv): rgb =
+let hsv_to_rgb ((h, s, v): hsv): rgb =
   let c = v * s
   let h' = h / 60.0
   let x = c * (1.0 - f32.abs (fmod h' 2.0 - 1.0))
@@ -45,7 +45,7 @@ fun hsv_to_rgb ((h, s, v): hsv): rgb =
   let (r, g, b) = (r0 + m, g0 + m, b0 + m)
   in (u32 (255.0 * r), u32 (255.0 * g), u32 (255.0 * b))
 
-fun hsv_average
+let hsv_average
   ((h0, s0, v0): hsv)
   ((h1, s1, v1): hsv)
   : hsv =

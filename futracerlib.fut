@@ -1,6 +1,6 @@
 import "futlib/math"
 
-import "futracerlib/racer"
+import "futracerlib/misc"
 import "futracerlib/transformations"
 import "futracerlib/color"
 
@@ -25,50 +25,40 @@ type surface = (surface_type, hsv, i32)
 type surface_double_texture = [][]hsv
 type triangle_with_surface = (triangle, surface)
 
-let normalize_point
-  (((xc, yc, zc), (ax, ay, az)): camera)
-  (p0: f32racer.point3D)
-  : f32racer.point3D =
-      let p1 = translate_point (-xc, -yc, -zc) p0
-      let p2 = rotate_point (-ax, -ay, -az) (0.0, 0.0, 0.0) p1
-      in p2
-
 let normalize_triangle
-  (camera: camera)
+  (((xc, yc, zc), (ax, ay, az)): camera)
   ((p0, p1, p2): triangle)
   : triangle =
-  let p0n = normalize_point camera p0
-  let p1n = normalize_point camera p1
-  let p2n = normalize_point camera p2
-  let triangle' = (p0n, p1n, p2n)
-  in triangle'
+  let normalize_point (pa: f32racer.point3D): f32racer.point3D =
+    let pb = translate_point (-xc, -yc, -zc) pa
+    let pc = rotate_point (-ax, -ay, -az) (0.0, 0.0, 0.0) pb
+    in pc
 
-let project_point
-  (view_dist: f32)
-  (w: i32) (h: i32)
-  ((x, y, z): f32racer.point3D)
-  : i32racer.point2D =
-  let z_ratio = if z >= 0.0
-                then (view_dist + z) / view_dist
-                else 1.0 / ((view_dist - z) / view_dist)
-  let x_projected = x / z_ratio + f32 w / 2.0
-  let y_projected = y / z_ratio + f32 h / 2.0
-  in (i32 x_projected, i32 y_projected)
+  in (normalize_point p0,
+      normalize_point p1,
+      normalize_point p2)
 
 let project_triangle
   (w: i32) (h: i32)
   (triangle: triangle)
   : triangle_projected =
   let view_dist = 600.0
-  let ((x0, y0, z0), (x1, y1, z1), (x2, y2, z2)) = triangle
-  let (xp0, yp0) = project_point view_dist w h (x0, y0, z0)
-  let (xp1, yp1) = project_point view_dist w h (x1, y1, z1)
-  let (xp2, yp2) = project_point view_dist w h (x2, y2, z2)
-  let triangle_projected = ((xp0, yp0, z0), (xp1, yp1, z1), (xp2, yp2, z2))
-  in triangle_projected
 
-let in_range (t: i32) (a: i32) (b: i32): bool =
-  (a < b && a <= t && t <= b) || (b <= a && b <= t && t <= a)
+  let project_point
+    ((x, y, z): f32racer.point3D)
+    : i32racer.point2D =
+    let z_ratio = if z >= 0.0
+                  then (view_dist + z) / view_dist
+                  else 1.0 / ((view_dist - z) / view_dist)
+    let x_projected = x / z_ratio + f32 w / 2.0
+    let y_projected = y / z_ratio + f32 h / 2.0
+    in (i32 x_projected, i32 y_projected)
+
+  let ((x0, y0, z0), (x1, y1, z1), (x2, y2, z2)) = triangle
+  let (xp0, yp0) = project_point (x0, y0, z0)
+  let (xp1, yp1) = project_point (x1, y1, z1)
+  let (xp2, yp2) = project_point (x2, y2, z2)
+  in ((xp0, yp0, z0), (xp1, yp1, z1), (xp2, yp2, z2))
 
 let barycentric_coordinates
   ((x, y): i32racer.point2D)
@@ -194,11 +184,6 @@ let render_triangles_redomap
   let frame = reshape (w, h) pixels
   in frame
 
-let within_bounds
-  (smallest: i32) (highest: i32)
-  (n: i32): i32 =
-  i32.max smallest (i32.min highest n)
-
 let bounding_box
   (w: i32) (h: i32)
   (((x0, y0, _z0), (x1, y1, _z1), (x2, y2, _z2)): triangle_projected)
@@ -264,29 +249,6 @@ let render_triangles_scatter_bbox
   let frame' = reshape (w, h) pixels
   in frame'
 
-let close_enough_dist
-  (draw_dist: f32)
-  ((_x, _y, z): point_projected)
-  : bool =
-  0.0 <= z && z < draw_dist
-
-let close_enough_fully_out_of_frame
-  (w: i32) (h: i32)
-  (((x0, y0, _z0), (x1, y1, _z1), (x2, y2, _z2)): triangle_projected)
-  : bool =
-  (x0 < 0 && x1 < 0 && x2 < 0) || (x0 >= w && x1 >= w && x2 >= w) ||
-  (y0 < 0 && y1 < 0 && y2 < 0) || (y0 >= h && y1 >= h && y2 >= h)
-
-let close_enough
-  (draw_dist: f32)
-  (w: i32) (h: i32)
-  (triangle: triangle_projected)
-  : bool =
-  (close_enough_dist draw_dist (#1 triangle) ||
-   close_enough_dist draw_dist (#2 triangle) ||
-   close_enough_dist draw_dist (#3 triangle)) &&
-  !(close_enough_fully_out_of_frame w h triangle)
-
 let render_triangles_in_view
   (render_approach: render_approach_id)
   (camera: camera)
@@ -300,10 +262,30 @@ let render_triangles_in_view
                                  triangles
   let triangles_projected = map (project_triangle w h)
                                 triangles_normalized
-  let triangles_close =
-    filter (\t -> close_enough draw_dist w h (#1 t))
-           (zip triangles_projected surfaces)
+
+  let close_enough_dist
+    ((_x, _y, z): point_projected)
+    : bool =
+    0.0 <= z && z < draw_dist
+
+  let close_enough_fully_out_of_frame
+    (((x0, y0, _z0), (x1, y1, _z1), (x2, y2, _z2)): triangle_projected)
+    : bool =
+    (x0 < 0 && x1 < 0 && x2 < 0) || (x0 >= w && x1 >= w && x2 >= w) ||
+    (y0 < 0 && y1 < 0 && y2 < 0) || (y0 >= h && y1 >= h && y2 >= h)
+
+  let close_enough
+    (triangle: triangle_projected)
+    : bool =
+    (close_enough_dist (#1 triangle) ||
+     close_enough_dist (#2 triangle) ||
+     close_enough_dist (#3 triangle)) &&
+    !(close_enough_fully_out_of_frame triangle)
+
+  let triangles_close = filter (\(t, _s) -> close_enough t)
+                               (zip triangles_projected surfaces)
   let (triangles_projected', surfaces') = unzip triangles_close
+
   in if render_approach == 1
      then render_triangles_redomap triangles_projected' surfaces' surface_textures w h
      else if render_approach == 2
