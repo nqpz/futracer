@@ -15,10 +15,13 @@ import futracer
 
 
 class FutFly:
-    def __init__(self, size=None):
+    def __init__(self, size=None, render_approach=None):
         if size is None:
             size = (800, 600)
         self.size = size
+        if render_approach is None:
+            render_approach = 'redomap'
+        self.render_approach = render_approach
         self.draw_dist = 2000.0
 
     def fly(self):
@@ -143,7 +146,7 @@ class FutFly:
             frame = self.racer.render_triangles(
                 self.size, self.draw_dist, camera,
                 None, triangles_pre,
-                None, textures_pre)
+                None, textures_pre, self.render_approach)
             time_end = time.time()
             frame = frame.get()
             futhark_dur_ms = (time_end - time_start) * 1000
@@ -197,10 +200,14 @@ def main(args):
     arg_parser = argparse.ArgumentParser()
     arg_parser.add_argument('--size', type=size, metavar='WIDTHxHEIGHT',
                             help='set the size of the racing game window')
+    arg_parser.add_argument('--render-approach',
+                            choices=['redomap', 'scatter_bbox'],
+                            default='redomap',
+                            help='choose how to render the frame')
 
     args = arg_parser.parse_args(args)
 
-    fly = FutFly(size=args.size)
+    fly = FutFly(size=args.size, render_approach=args.render_approach)
     return fly.fly()
 
 if __name__ == '__main__':

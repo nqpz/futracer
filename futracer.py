@@ -9,6 +9,8 @@ import pyopencl.array
 import futracerlib
 
 
+APPROACH_REDOMAP, APPROACH_SCATTER_BBOX = range(1, 3)
+
 class FutRacer:
     def __init__(self):
         self.futhark = futracerlib.futracerlib()
@@ -123,7 +125,8 @@ class FutRacer:
                 s_textures_hs_flat, s_textures_ss_flat, s_textures_vs_flat)
 
     def render_triangles_preprocessed(self, size, draw_dist, camera,
-                                      triangles_pre, textures_pre):
+                                      triangles_pre, textures_pre,
+                                      render_approach='redomap'):
         w, h = size
 
         ((c_x, c_y, c_z), (c_ax, c_ay, c_az)) = camera
@@ -134,8 +137,13 @@ class FutRacer:
         (textures_len, texture_w, texture_h,
          s_textures_hs_flat, s_textures_ss_flat, s_textures_vs_flat) = textures_pre
 
+        if render_approach == 'redomap':
+            render_approach = APPROACH_REDOMAP
+        elif render_approach == 'scatter_bbox':
+            render_approach = APPROACH_SCATTER_BBOX
+
         return self.futhark.render_triangles_raw(
-            w, h, draw_dist,
+            render_approach, w, h, draw_dist,
             x0s, y0s, z0s, x1s, y1s, z1s, x2s, y2s, z2s,
             s_types, s_hsv_hs, s_hsv_ss, s_hsv_vs, s_indices,
             textures_len, texture_w, texture_h,
@@ -144,7 +152,8 @@ class FutRacer:
 
     def render_triangles(self, size, draw_dist, camera,
                          triangles, triangles_pre,
-                         textures, textures_pre):
+                         textures, textures_pre,
+                         render_approach='redomap'):
         if triangles is None:
             triangles_pre1 = triangles_pre
         else:
@@ -167,4 +176,5 @@ class FutRacer:
             triangles_pre1 = [length, p0_w, p0_h] + triangles_pre1_arrays
         return self.render_triangles_preprocessed(
             size, draw_dist, camera,
-            triangles_pre1, textures_pre1)
+            triangles_pre1, textures_pre1,
+            render_approach)

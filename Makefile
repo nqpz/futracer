@@ -2,7 +2,7 @@
 
 all: futracerlib.py
 
-futracerlib.py: futracerlib.fut futracerlib/*.fut futracerlib/*/*.fut
+futracerlib.py: futracerlib.fut futracerlib/*.fut
 	futhark-pyopencl --library futracerlib.fut
 
 clean:

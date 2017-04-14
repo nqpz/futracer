@@ -13,7 +13,8 @@ import futracer
 
 
 class FutCubes:
-    def __init__(self, size=None, n_cubes=None, just_colors=False):
+    def __init__(self, size=None, n_cubes=None, just_colors=False,
+                 render_approach=None):
         if size is None:
             size = (800, 600)
         self.size = size
@@ -21,6 +22,9 @@ class FutCubes:
             n_cubes = 2000
         self.n_cubes = n_cubes
         self.just_colors = just_colors
+        if render_approach is None:
+            render_approach = 'redomap'
+        self.render_approach = render_approach
         self.draw_dist = 800.0
 
     def run(self):
@@ -145,7 +149,7 @@ class FutCubes:
             frame = self.racer.render_triangles(
                 self.size, self.draw_dist, camera,
                 [dynamic_triangle], triangles_pre,
-                None, textures_pre)
+                None, textures_pre, futracer.APPROACH_SCATTER_BBOX)
             time_end = time.time()
             frame = frame.get()
             futhark_dur_ms = (time_end - time_start) * 1000
@@ -199,6 +203,10 @@ def main(args):
                             help='set the number of cubes in the world (defaults to 2000)')
     arg_parser.add_argument('--just-colors', action='store_true',
                             help='use random colors instead of the pretty texture')
+    arg_parser.add_argument('--render-approach',
+                            choices=['redomap', 'scatter_bbox'],
+                            default='redomap',
+                            help='choose how to render the frame')
 
     args = arg_parser.parse_args(args)
 

@@ -1,15 +1,19 @@
-import "futracerlib/base/F32"
-import "futracerlib/base/I32"
+import "futlib/math"
+
+import "futracerlib/racer"
 import "futracerlib/transformations"
 import "futracerlib/color"
 
 default (i32, f32)
 
-type triangle = (F32Extra.point3D, F32Extra.point3D, F32Extra.point3D)
+type render_approach_id = i32
+
+type triangle = (f32racer.point3D, f32racer.point3D, f32racer.point3D)
 type point_projected = (i32, i32, f32)
 type triangle_projected = (point_projected, point_projected, point_projected)
-type point_barycentric = (i32, I32Extra.point3D, F32Extra.point3D)
-type camera = (F32Extra.point3D, F32Extra.angles)
+type point_barycentric = (i32, i32racer.point3D, f32racer.point3D)
+type camera = (f32racer.point3D, f32racer.angles)
+type rectangle = (i32racer.point2D, i32racer.point2D)
 
 -- If surface_type == 1, use the color in #1 surface.
 -- If surface_type == 2, use the surface from the index in #2 surface.
@@ -22,16 +26,16 @@ type surface_double_texture = [][]hsv
 type triangle_with_surface = (triangle, surface)
 
 let normalize_point
-  (((xc, yc, zc), (ax, ay, az)) : camera)
-  (p0 : F32Extra.point3D)
-  : F32Extra.point3D =
-      let p1 = (translate_point (-xc, -yc, -zc) p0)
+  (((xc, yc, zc), (ax, ay, az)): camera)
+  (p0: f32racer.point3D)
+  : f32racer.point3D =
+      let p1 = translate_point (-xc, -yc, -zc) p0
       let p2 = rotate_point (-ax, -ay, -az) (0.0, 0.0, 0.0) p1
       in p2
 
 let normalize_triangle
-  (camera : camera)
-  ((p0, p1, p2) : triangle)
+  (camera: camera)
+  ((p0, p1, p2): triangle)
   : triangle =
   let p0n = normalize_point camera p0
   let p1n = normalize_point camera p1
@@ -40,10 +44,10 @@ let normalize_triangle
   in triangle'
 
 let project_point
-  (view_dist : f32)
-  (w : i32) (h : i32)
-  ((x, y, z) : F32Extra.point3D)
-  : I32Extra.point2D =
+  (view_dist: f32)
+  (w: i32) (h: i32)
+  ((x, y, z): f32racer.point3D)
+  : i32racer.point2D =
   let z_ratio = if z >= 0.0
                 then (view_dist + z) / view_dist
                 else 1.0 / ((view_dist - z) / view_dist)
@@ -52,8 +56,8 @@ let project_point
   in (i32 x_projected, i32 y_projected)
 
 let project_triangle
-  (w : i32) (h : i32)
-  (triangle : triangle)
+  (w: i32) (h: i32)
+  (triangle: triangle)
   : triangle_projected =
   let view_dist = 600.0
   let ((x0, y0, z0), (x1, y1, z1), (x2, y2, z2)) = triangle
@@ -63,12 +67,12 @@ let project_triangle
   let triangle_projected = ((xp0, yp0, z0), (xp1, yp1, z1), (xp2, yp2, z2))
   in triangle_projected
 
-let in_range (t : i32) (a : i32) (b : i32) : bool =
+let in_range (t: i32) (a: i32) (b: i32): bool =
   (a < b && a <= t && t <= b) || (b <= a && b <= t && t <= a)
 
 let barycentric_coordinates
-  ((x, y) : I32Extra.point2D)
-  (triangle : triangle_projected)
+  ((x, y): i32racer.point2D)
+  (triangle: triangle_projected)
   : point_barycentric =
   let ((xp0, yp0, _z0), (xp1, yp1, _z1), (xp2, yp2, _z2)) = triangle
   let factor = (yp1 - yp2) * (xp0 - xp2) + (xp2 - xp1) * (yp0 - yp2)
@@ -82,124 +86,96 @@ let barycentric_coordinates
   in (factor, (a, b, c), (an, bn, cn))
 
 let is_inside_triangle
-  ((factor, (a, b, c), (_an, _bn, _cn)) : point_barycentric)
+  ((factor, (a, b, c), (_an, _bn, _cn)): point_barycentric)
   : bool =
   in_range a 0 factor && in_range b 0 factor && in_range c 0 factor
 
 let interpolate_z
-  (triangle : triangle_projected)
-  ((_factor, (_a, _b, _c), (an, bn, cn)) : point_barycentric)
+  (triangle: triangle_projected)
+  ((_factor, (_a, _b, _c), (an, bn, cn)): point_barycentric)
   : f32 =
   let ((_xp0, _yp0, z0), (_xp1, _yp1, z1), (_xp2, _yp2, z2)) = triangle
   in an * z0 + bn * z1 + cn * z2
 
-let dist
-  ((x0, y0, z0) : F32Extra.point3D)
-  ((x1, y1, z1) : F32Extra.point3D)
-  : f32 =
-  f32.sqrt((x1 - x0)**2.0 + (y1 - y0)**2.0 + (z1 - z0)**2.0)
+let color_point
+  (surface_textures: [][#texture_h][#texture_w]hsv)
+  ((s_t, s_hsv, s_ti): surface)
+  (z: f32)
+  (bary: point_barycentric)
+  : hsv =
+  let (h, s, v) =
+    if s_t == 1
+    -- Use the color.
+    then s_hsv
+    else if s_t == 2
+    -- Use the texture index.
+    then let double_tex = unsafe surface_textures[s_ti / 2]
+         let ((xn0, yn0), (xn1, yn1), (xn2, yn2)) =
+           if s_ti & 1 == 0
+           then ((0.0, 0.0),
+                 (0.0, 1.0),
+                 (1.0, 0.0))
+           else ((1.0, 1.0),
+                 (1.0, 0.0),
+                 (0.0, 1.0))
+         let (an, bn, cn) = #3 bary
+         let yn = an * yn0 + bn * yn1 + cn * yn2
+         let xn = an * xn0 + bn * xn1 + cn * xn2
+         let yi = i32 (yn * f32 texture_h)
+         let xi = i32 (xn * f32 texture_w)
+         in if xi >= 0 && xi < texture_w && yi >= 0 && yi < texture_h
+            then unsafe double_tex[yi, xi]
+            else (0.0, 0.0, 0.0) -- not in triangle
+            else (0.0, 0.0, 0.0) -- error
+     let flashlight_brightness = 2.0 * 10.0**5.0
+     let v_factor = f32.min 1.0 (flashlight_brightness
+                                 / (z ** 2.0))
+     in (h, s, v * v_factor)
 
-let close_enough_dist
-  (draw_dist : f32)
-  ((_x, _y, z) : point_projected)
-  : bool =
-  0.0 <= z && z < draw_dist
-
-let close_enough_fully_out_of_frame
-  (w : i32) (h : i32)
-  (((x0, y0, _z0), (x1, y1, _z1), (x2, y2, _z2)) : triangle_projected)
-  : bool =
-  (x0 < 0 && x1 < 0 && x2 < 0) || (x0 >= w && x1 >= w && x2 >= w) ||
-  (y0 < 0 && y1 < 0 && y2 < 0) || (y0 >= h && y1 >= h && y2 >= h)
-
-let close_enough
-  (draw_dist : f32)
-  (w : i32) (h : i32)
-  (triangle : triangle_projected)
-  : bool =
-  (close_enough_dist draw_dist (#1 triangle) ||
-   close_enough_dist draw_dist (#2 triangle) ||
-   close_enough_dist draw_dist (#3 triangle)) &&
-  !(close_enough_fully_out_of_frame w h triangle)
-
-let render_triangles'
-  (triangles_projected : [#tn]triangle_projected)
-  (surfaces : [#tn]surface)
-  (surface_textures : [][#texture_h][#texture_w]hsv)
-  (w : i32) (h : i32)
+let render_triangles_redomap
+  (triangles_projected: [#tn]triangle_projected)
+  (surfaces: [#tn]surface)
+  (surface_textures: [][#texture_h][#texture_w]hsv)
+  (w: i32) (h: i32)
   : [w][h]pixel =
-  let bbox_coordinates =
+  let coordinates =
     reshape (w * h)
-    (map (\(x : i32) : [h](i32, i32) ->
-            map (\(y : i32) : (i32, i32) ->
+    (map (\(x: i32): [h](i32, i32) ->
+            map (\(y: i32): (i32, i32) ->
                    (x, y))
                 (iota h))
          (iota w))
 
-  let baryss = map (\(p : I32Extra.point2D) : [tn]point_barycentric ->
+  let baryss = map (\(p: i32racer.point2D): [tn]point_barycentric ->
                       map (barycentric_coordinates p)
                           triangles_projected)
-                   bbox_coordinates
+                   coordinates
 
-  let is_insidess = map (\(barys : [tn]point_barycentric) : [tn]bool ->
+  let is_insidess = map (\(barys: [tn]point_barycentric): [tn]bool ->
                            map is_inside_triangle barys)
-                       baryss
+                        baryss
 
-  let z_valuess = map (\(barys : [tn]point_barycentric) : [tn]f32 ->
+  let z_valuess = map (\(barys: [tn]point_barycentric): [tn]f32 ->
                          map interpolate_z triangles_projected barys)
                       baryss
 
-  let colorss = map (\(z_values : [tn]f32)
-                      (barys : [tn]point_barycentric)
-                      : [tn]hsv ->
-                       map (\(z : f32) (bary : point_barycentric)
-                             ((s_t, s_hsv, s_ti) : surface) : hsv ->
-                              let (h, s, v) =
-                                if s_t == 1
-                                -- Use the color.
-                                then s_hsv
-                                else if s_t == 2
-                                -- Use the texture index.
-                                then let double_tex = unsafe surface_textures[s_ti / 2]
-                                     let ((xn0, yn0), (xn1, yn1), (xn2, yn2)) =
-                                       if s_ti & 1 == 0
-                                       then ((0.0, 0.0),
-                                             (0.0, 1.0),
-                                             (1.0, 0.0))
-                                       else ((1.0, 1.0),
-                                             (1.0, 0.0),
-                                             (0.0, 1.0))
-                                     let (an, bn, cn) = #3 bary
-                                     let yn = an * yn0 + bn * yn1 + cn * yn2
-                                     let xn = an * xn0 + bn * xn1 + cn * xn2
-                                     let yi = i32(yn * f32(texture_h))
-                                     let xi = i32(xn * f32(texture_w))
-                                     in if xi >= 0 && xi < texture_w && yi >= 0 && yi < texture_h
-                                        then unsafe double_tex[yi, xi]
-                                        else (0.0, 0.0, 0.0) -- not in triangle
-                                else (0.0, 0.0, 0.0) -- error
-                              let flashlight_brightness = 2.0 * 10.0**5.0
-                              let v_factor = F32Extra.min 1.0 (flashlight_brightness
-                                                          / (z ** 2.0))
-                              in (h, s, v * v_factor))
-                           z_values barys surfaces)
+  let colorss = map (\(z_values: [tn]f32)
+                      (barys: [tn]point_barycentric): [tn]hsv ->
+                       map (color_point surface_textures)
+                           surfaces z_values barys)
                     z_valuess baryss
 
-  -- Possible improvement: The code below compares each triangle with every
-  -- pixel.  It might be faster to only compare it with the pixels of its square
-  -- bounding box, and do so in a loop and with 'write', although in that case
-  -- some of the above code might also have to be changed.
   let (_mask, _z_values, colors) =
-    unzip (map (\(is_insides : [tn]bool)
-                 (z_values : [tn]f32)
-                 (colors : [tn]hsv)
+    unzip (map (\(is_insides: [tn]bool)
+                 (z_values: [tn]f32)
+                 (colors: [tn]hsv)
                  : (bool, f32, hsv) ->
                   let neutral_element = (false, -1.0, (0.0, 0.0, 0.0)) in
                   (reduce_comm (\((in_triangle0, z0, hsv0)
-                                 : (bool, f32, hsv))
+                                : (bool, f32, hsv))
                                 ((in_triangle1, z1, hsv1)
-                                 : (bool, f32, hsv))
-                                : (bool, f32, hsv) ->
+                                : (bool, f32, hsv))
+                               : (bool, f32, hsv) ->
                                  if (in_triangle0 && z0 >= 0.0 &&
                                      (z1 < 0.0 || !in_triangle1 || z0 < z1))
                                  then (true, z0, hsv0)
@@ -218,12 +194,105 @@ let render_triangles'
   let frame = reshape (w, h) pixels
   in frame
 
-let render_triangles
-  (camera : camera)
-  (triangles_with_surfaces : []triangle_with_surface)
-  (surface_textures : [][#texture_h][#texture_w]hsv)
-  (w : i32) (h : i32)
-  (draw_dist : f32)
+let within_bounds
+  (smallest: i32) (highest: i32)
+  (n: i32): i32 =
+  i32.max smallest (i32.min highest n)
+
+let bounding_box
+  (w: i32) (h: i32)
+  (((x0, y0, _z0), (x1, y1, _z1), (x2, y2, _z2)): triangle_projected)
+  : rectangle =
+  ((within_bounds 0i32 (w - 1) (i32.min (i32.min x0 x1) x2),
+    within_bounds 0i32 (h - 1) (i32.min (i32.min y0 y1) y2)),
+   (within_bounds 0i32 (w - 1) (i32.max (i32.max x0 x1) x2),
+    within_bounds 0i32 (h - 1) (i32.max (i32.max y0 y1) y2)))
+
+let render_triangles_scatter_bbox
+  (triangles_projected: [#tn]triangle_projected)
+  (surfaces: [#tn]surface)
+  (surface_textures: [][#texture_h][#texture_w]hsv)
+  (w: i32) (h: i32)
+  : [w][h]pixel =
+  let pixels_initial = replicate (w * h) 0u32
+  let z_values_initial = replicate (w * h) f32.inf
+  loop ((pixels, z_values) = (pixels_initial, z_values_initial)) = for i < tn do
+    let triangle_projected = triangles_projected[i]
+    let surface = surfaces[i]
+    let ((x_left, y_top), (x_right, y_bottom)) = bounding_box w h triangle_projected
+    let x_span = x_right - x_left + 1
+    let y_span = y_bottom - y_top + 1
+    let coordinates = reshape (x_span * y_span)
+                              (map (\x -> map (\y -> (x, y))
+                                              (map (+ y_top) (iota y_span)))
+                                   (map (+ x_left) (iota x_span)))
+    let indices = map (\(x, y) -> x * h + y) coordinates
+    let pixels_cur = map (\j -> unsafe pixels[j]) indices
+    let z_values_cur = map (\i -> unsafe z_values[i]) indices
+
+    let barys_new = map (\(p: i32racer.point2D): point_barycentric ->
+                           barycentric_coordinates p triangle_projected)
+                        coordinates
+
+    let z_values_new = map (interpolate_z triangle_projected) barys_new
+
+    let colors_new = map (color_point surface_textures surface)
+                         z_values_new barys_new
+    let pixels_new = map (\x -> rgb_to_pixel (hsv_to_rgb x)) colors_new
+
+    let is_insides_new = map is_inside_triangle barys_new
+
+    let merge_colors
+      (p_cur: pixel)
+      (z_cur: f32)
+      (p_new: pixel)
+      (z_new: f32)
+      (in_triangle_new: bool)
+      : (pixel, f32) =
+      if in_triangle_new && z_new >= 0.0 && z_new < z_cur
+      then (p_new, z_new)
+      else (p_cur, z_cur)
+
+    let colors_merged = map merge_colors pixels_cur z_values_cur
+                            pixels_new z_values_new is_insides_new
+    let (pixels_merged, z_values_merged) = unzip colors_merged
+
+    let pixels' = scatter pixels indices pixels_merged
+    let z_values' = scatter z_values indices z_values_merged
+    in (pixels', z_values')
+  let frame' = reshape (w, h) pixels
+  in frame'
+
+let close_enough_dist
+  (draw_dist: f32)
+  ((_x, _y, z): point_projected)
+  : bool =
+  0.0 <= z && z < draw_dist
+
+let close_enough_fully_out_of_frame
+  (w: i32) (h: i32)
+  (((x0, y0, _z0), (x1, y1, _z1), (x2, y2, _z2)): triangle_projected)
+  : bool =
+  (x0 < 0 && x1 < 0 && x2 < 0) || (x0 >= w && x1 >= w && x2 >= w) ||
+  (y0 < 0 && y1 < 0 && y2 < 0) || (y0 >= h && y1 >= h && y2 >= h)
+
+let close_enough
+  (draw_dist: f32)
+  (w: i32) (h: i32)
+  (triangle: triangle_projected)
+  : bool =
+  (close_enough_dist draw_dist (#1 triangle) ||
+   close_enough_dist draw_dist (#2 triangle) ||
+   close_enough_dist draw_dist (#3 triangle)) &&
+  !(close_enough_fully_out_of_frame w h triangle)
+
+let render_triangles_in_view
+  (render_approach: render_approach_id)
+  (camera: camera)
+  (triangles_with_surfaces: []triangle_with_surface)
+  (surface_textures: [][#texture_h][#texture_w]hsv)
+  (w: i32) (h: i32)
+  (draw_dist: f32)
   : [w][h]pixel =
   let (triangles, surfaces) = unzip triangles_with_surfaces
   let triangles_normalized = map (normalize_triangle camera)
@@ -234,40 +303,45 @@ let render_triangles
     filter (\t -> close_enough draw_dist w h (#1 t))
            (zip triangles_projected surfaces)
   let (triangles_projected', surfaces') = unzip triangles_close
-  in render_triangles' triangles_projected' surfaces' surface_textures w h
+  in if render_approach == 1
+     then render_triangles_redomap triangles_projected' surfaces' surface_textures w h
+     else if render_approach == 2
+     then render_triangles_scatter_bbox triangles_projected' surfaces' surface_textures w h
+     else replicate w (replicate h 0u32) -- error
 
 entry render_triangles_raw
   (
-   w : i32,
-   h : i32,
-   draw_dist : f32,
-   x0s : [#n]f32,
-   y0s : [#n]f32,
-   z0s : [#n]f32,
-   x1s : [#n]f32,
-   y1s : [#n]f32,
-   z1s : [#n]f32,
-   x2s : [#n]f32,
-   y2s : [#n]f32,
-   z2s : [#n]f32,
-   surface_types : [#n]surface_type,
-   surface_hsv_hs : [#n]f32,
-   surface_hsv_ss : [#n]f32,
-   surface_hsv_vs : [#n]f32,
-   surface_indices : [#n]i32,
-   surface_n : i32,
-   surface_w : i32,
-   surface_h : i32,
-   surface_textures_flat_hsv_hs : []f32,
-   surface_textures_flat_hsv_ss : []f32,
-   surface_textures_flat_hsv_vs : []f32,
-   c_x : f32,
-   c_y : f32,
-   c_z : f32,
-   c_ax : f32,
-   c_ay : f32,
-   c_az : f32
-  ) : [w][h]pixel =
+   render_approach: render_approach_id,
+   w: i32,
+   h: i32,
+   draw_dist: f32,
+   x0s: [#n]f32,
+   y0s: [#n]f32,
+   z0s: [#n]f32,
+   x1s: [#n]f32,
+   y1s: [#n]f32,
+   z1s: [#n]f32,
+   x2s: [#n]f32,
+   y2s: [#n]f32,
+   z2s: [#n]f32,
+   surface_types: [#n]surface_type,
+   surface_hsv_hs: [#n]f32,
+   surface_hsv_ss: [#n]f32,
+   surface_hsv_vs: [#n]f32,
+   surface_indices: [#n]i32,
+   surface_n: i32,
+   surface_w: i32,
+   surface_h: i32,
+   surface_textures_flat_hsv_hs: []f32,
+   surface_textures_flat_hsv_ss: []f32,
+   surface_textures_flat_hsv_vs: []f32,
+   c_x: f32,
+   c_y: f32,
+   c_z: f32,
+   c_ax: f32,
+   c_ay: f32,
+   c_az: f32
+  ): [w][h]pixel =
   let camera = ((c_x, c_y, c_z), (c_ax, c_ay, c_az))
   let p0s = zip x0s y0s z0s
   let p1s = zip x1s y1s z1s
@@ -280,4 +354,4 @@ entry render_triangles_raw
                                       surface_textures_flat_hsv_ss
                                       surface_textures_flat_hsv_vs)
   let triangles_with_surfaces = zip triangles surfaces
-  in render_triangles camera triangles_with_surfaces surface_textures w h draw_dist
+  in render_triangles_in_view render_approach camera triangles_with_surfaces surface_textures w h draw_dist

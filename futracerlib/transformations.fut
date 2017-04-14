@@ -1,13 +1,14 @@
 import "futlib/math"
-import "futracerlib/base/F32"
+
+import "futracerlib/racer"
 
 default (i32, f32)
 
 fun rotate_point
-  ((angle_x, angle_y, angle_z): F32Extra.angles)
-  ((x_origo, y_origo, z_origo): F32Extra.point3D)
-  ((x, y, z): F32Extra.point3D)
-  : F32Extra.point3D =
+  ((angle_x, angle_y, angle_z): f32racer.angles)
+  ((x_origo, y_origo, z_origo): f32racer.point3D)
+  ((x, y, z): f32racer.point3D)
+  : f32racer.point3D =
   let (x0, y0, z0) = (x - x_origo, y - y_origo, z - z_origo)
 
   let (sin_x, cos_x) = (f32.sin angle_x, f32.cos angle_x)
@@ -31,9 +32,9 @@ fun rotate_point
   in (x', y', z')
 
 fun translate_point
-  ((x_move, y_move, z_move): F32Extra.point3D)
-  ((x, y, z): F32Extra.point3D)
-  : F32Extra.point3D =
+  ((x_move, y_move, z_move): f32racer.point3D)
+  ((x, y, z): f32racer.point3D)
+  : f32racer.point3D =
   (x + x_move, y + y_move, z + z_move)
 
 entry rotate_point_raw
