@@ -22,6 +22,7 @@ class FutFly:
         if render_approach is None:
             render_approach = 'redomap'
         self.render_approach = render_approach
+        self.view_dist = 600.0
         self.draw_dist = 2000.0
 
     def fly(self):
@@ -130,7 +131,8 @@ class FutFly:
         camera = [[15000.0, -500.0, 0.0], [0.0, 0.0, 0.0]]
 
         keys_holding = {}
-        for x in [pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT]:
+        for x in [pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT,
+                  pygame.K_PAGEUP, pygame.K_PAGEDOWN]:
             keys_holding[x] = False
 
         def inf_range():
@@ -144,7 +146,7 @@ class FutFly:
             time_start = time.time()
 
             frame = self.racer.render_triangles(
-                self.size, self.draw_dist, camera,
+                self.size, self.view_dist, self.draw_dist, camera,
                 None, triangles_pre,
                 None, textures_pre, self.render_approach)
             time_end = time.time()
@@ -184,6 +186,13 @@ class FutFly:
             #     camera[1][1] -= 0.02
             # if keys_holding[pygame.K_RIGHT]:
             #     camera[1][1] += 0.02
+
+            if keys_holding[pygame.K_PAGEUP]:
+                self.view_dist += 10.0
+            if keys_holding[pygame.K_PAGEDOWN]:
+                self.view_dist -= 10.0
+                if self.view_dist < 1.0:
+                    self.view_dist = 1.0
 
             # Always fly forwards.
             p1 = camera[0][:]

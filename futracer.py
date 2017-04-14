@@ -124,7 +124,7 @@ class FutRacer:
         return (len(textures), texture_w, texture_h,
                 s_textures_hs_flat, s_textures_ss_flat, s_textures_vs_flat)
 
-    def render_triangles_preprocessed(self, size, draw_dist, camera,
+    def render_triangles_preprocessed(self, size, view_dist, draw_dist, camera,
                                       triangles_pre, textures_pre,
                                       render_approach='redomap'):
         w, h = size
@@ -143,14 +143,14 @@ class FutRacer:
             render_approach = APPROACH_SCATTER_BBOX
 
         return self.futhark.render_triangles_raw(
-            render_approach, w, h, draw_dist,
+            render_approach, w, h, view_dist, draw_dist,
             x0s, y0s, z0s, x1s, y1s, z1s, x2s, y2s, z2s,
             s_types, s_hsv_hs, s_hsv_ss, s_hsv_vs, s_indices,
             textures_len, texture_w, texture_h,
             s_textures_hs_flat, s_textures_ss_flat, s_textures_vs_flat,
             c_x, c_y, c_z, c_ax, c_ay, c_az)
 
-    def render_triangles(self, size, draw_dist, camera,
+    def render_triangles(self, size, view_dist, draw_dist, camera,
                          triangles, triangles_pre,
                          textures, textures_pre,
                          render_approach='redomap'):
@@ -175,6 +175,6 @@ class FutRacer:
                               for x, y in zip(textures_pre0_arrays, textures_pre_arrays)]
             triangles_pre1 = [length, p0_w, p0_h] + triangles_pre1_arrays
         return self.render_triangles_preprocessed(
-            size, draw_dist, camera,
+            size, view_dist, draw_dist, camera,
             triangles_pre1, textures_pre1,
             render_approach)

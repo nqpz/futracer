@@ -25,6 +25,7 @@ class FutCubes:
         if render_approach is None:
             render_approach = 'redomap'
         self.render_approach = render_approach
+        self.view_dist = 600.0
         self.draw_dist = 800.0
 
     def run(self):
@@ -124,7 +125,8 @@ class FutCubes:
         camera = [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]]
 
         keys_holding = {}
-        for x in [pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT]:
+        for x in [pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT,
+                  pygame.K_PAGEUP, pygame.K_PAGEDOWN]:
             keys_holding[x] = False
 
         def inf_range():
@@ -147,7 +149,7 @@ class FutCubes:
                 dynamic_angles, dynamic_origo, dynamic_triangle)
 
             frame = self.racer.render_triangles(
-                self.size, self.draw_dist, camera,
+                self.size, self.view_dist, self.draw_dist, camera,
                 [dynamic_triangle], triangles_pre,
                 None, textures_pre, futracer.APPROACH_SCATTER_BBOX)
             time_end = time.time()
@@ -189,6 +191,13 @@ class FutCubes:
                 camera[1][1] -= 0.04
             if keys_holding[pygame.K_RIGHT]:
                 camera[1][1] += 0.04
+
+            if keys_holding[pygame.K_PAGEUP]:
+                self.view_dist += 10.0
+            if keys_holding[pygame.K_PAGEDOWN]:
+                self.view_dist -= 10.0
+                if self.view_dist < 1.0:
+                    self.view_dist = 1.0
 
             self.clock.tick()
 

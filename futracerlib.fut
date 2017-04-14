@@ -21,6 +21,7 @@ entry render_triangles_raw
    render_approach: render_approach_id,
    w: i32,
    h: i32,
+   view_dist: f32,
    draw_dist: f32,
    x0s: [#n]f32,
    y0s: [#n]f32,
@@ -61,4 +62,5 @@ entry render_triangles_raw
                                       surface_textures_flat_hsv_ss
                                       surface_textures_flat_hsv_vs)
   let triangles_with_surfaces = zip triangles surfaces
-  in render_triangles_in_view render_approach camera triangles_with_surfaces surface_textures w h draw_dist
+  in render_triangles_in_view render_approach camera triangles_with_surfaces
+                              surface_textures w h view_dist draw_dist

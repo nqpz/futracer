@@ -40,9 +40,9 @@ let normalize_triangle
 
 let project_triangle
   (w: i32) (h: i32)
+  (view_dist: f32)
   (triangle: triangle)
   : triangle_projected =
-  let view_dist = 600.0
 
   let project_point
     ((x, y, z): f32racer.point3D)
@@ -255,12 +255,13 @@ let render_triangles_in_view
   (triangles_with_surfaces: []triangle_with_surface)
   (surface_textures: [][#texture_h][#texture_w]hsv)
   (w: i32) (h: i32)
+  (view_dist: f32)
   (draw_dist: f32)
   : [w][h]pixel =
   let (triangles, surfaces) = unzip triangles_with_surfaces
   let triangles_normalized = map (normalize_triangle camera)
                                  triangles
-  let triangles_projected = map (project_triangle w h)
+  let triangles_projected = map (project_triangle w h view_dist)
                                 triangles_normalized
 
   let close_enough_dist ((_x, _y, z): point_projected): bool =
