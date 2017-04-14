@@ -205,7 +205,7 @@ def main(args):
     def size(s):
         return tuple(map(int, s.split('x')))
 
-    arg_parser = argparse.ArgumentParser()
+    arg_parser = argparse.ArgumentParser(description='Use the arrow keys to move around.  Use Page Up and Page Down to adjust the view distance.')
     arg_parser.add_argument('--size', type=size, metavar='WIDTHxHEIGHT',
                             help='set the size of the racing game window')
     arg_parser.add_argument('--cubes', type=int, metavar='N',
