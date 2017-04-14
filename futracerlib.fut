@@ -219,6 +219,7 @@ let render_triangles_scatter_bbox
   loop ((pixels, z_values) = (pixels_initial, z_values_initial)) = for i < tn do
     let triangle_projected = triangles_projected[i]
     let surface = surfaces[i]
+
     let ((x_left, y_top), (x_right, y_bottom)) = bounding_box w h triangle_projected
     let x_span = x_right - x_left + 1
     let y_span = y_bottom - y_top + 1
@@ -227,7 +228,7 @@ let render_triangles_scatter_bbox
                                               (map (+ y_top) (iota y_span)))
                                    (map (+ x_left) (iota x_span)))
     let indices = map (\(x, y) -> x * h + y) coordinates
-    let pixels_cur = map (\j -> unsafe pixels[j]) indices
+
     let z_values_cur = map (\i -> unsafe z_values[i]) indices
 
     let barys_new = map (\(p: i32racer.point2D): point_barycentric ->
@@ -243,22 +244,22 @@ let render_triangles_scatter_bbox
     let is_insides_new = map is_inside_triangle barys_new
 
     let merge_colors
-      (p_cur: pixel)
+      (i: i32)
       (z_cur: f32)
       (p_new: pixel)
       (z_new: f32)
       (in_triangle_new: bool)
-      : (pixel, f32) =
+      : (i32, pixel, f32) =
       if in_triangle_new && z_new >= 0.0 && z_new < z_cur
-      then (p_new, z_new)
-      else (p_cur, z_cur)
+      then (i, p_new, z_new)
+      else (-1, 0u32, 0.0f32)
 
-    let colors_merged = map merge_colors pixels_cur z_values_cur
+    let colors_merged = map merge_colors indices z_values_cur
                             pixels_new z_values_new is_insides_new
-    let (pixels_merged, z_values_merged) = unzip colors_merged
+    let (indices_merged, pixels_merged, z_values_merged) = unzip colors_merged
 
-    let pixels' = scatter pixels indices pixels_merged
-    let z_values' = scatter z_values indices z_values_merged
+    let pixels' = scatter pixels indices_merged pixels_merged
+    let z_values' = scatter z_values indices_merged z_values_merged
     in (pixels', z_values')
   let frame' = reshape (w, h) pixels
   in frame'
