@@ -1,3 +1,5 @@
 /futracerlib.py
 *.pyc
+__pycache__
 .#*
+*#

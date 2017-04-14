@@ -6,4 +6,5 @@ futracerlib.py: futracerlib.fut futracerlib/*.fut
 	futhark-pyopencl --library futracerlib.fut
 
 clean:
-	rm -f futracerlib.py futracer.pyc
+	rm -f futracerlib.py futracerlib.pyc futracer.pyc
+	rm -rf __pycache__
