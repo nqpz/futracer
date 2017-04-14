@@ -14,13 +14,13 @@ module racer (num: racer_num) = {
   type angles = (t, t, t)
 }
 
-module f32racer = racer({
+module f32racer = racer {
   type t = f32
-})
+}
 
-module i32racer = racer({
+module i32racer = racer {
   type t = i32
-})
+}
 
 let fmod (a: f32) (m: f32): f32 =
   a - f32 (i32 (a / m)) * m
