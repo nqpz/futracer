@@ -1,4 +1,4 @@
-import "futlib/math"
+import "/futlib/math"
 
 import "futracerlib/misc"
 

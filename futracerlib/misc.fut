@@ -1,4 +1,4 @@
-import "futlib/math"
+import "/futlib/math"
 
 default (i32, f32)
 
