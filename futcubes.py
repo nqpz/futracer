@@ -112,7 +112,7 @@ class FutCubes:
         else:
             base_dir = os.path.dirname(__file__)
             sonic_texture = self.racer.load_double_texture(
-                os.path.join(base_dir, 'data/sonic-texture.png'))
+                os.path.join(base_dir, 'data/futcubes/sonic-texture.png'))
             textures_size = (100, 100)
             assert (textures_size[0], textures_size[1], 3) == sonic_texture.shape
             triangles, textures = self.random_cubes(sonic_texture)
