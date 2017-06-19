@@ -117,9 +117,9 @@ class FutRacer:
                 len(textures) * texture_h * texture_w).astype('float32')
             s_textures_vs_flat = self.to_device(s_textures_vs_flat, 'float32')
         else:
-            s_textures_hs_flat = numpy.empty((0,))
-            s_textures_ss_flat = numpy.empty((0,))
-            s_textures_vs_flat = numpy.empty((0,))
+            s_textures_hs_flat = numpy.empty((0,)).astype('float32')
+            s_textures_ss_flat = numpy.empty((0,)).astype('float32')
+            s_textures_vs_flat = numpy.empty((0,)).astype('float32')
 
         return (len(textures), texture_w, texture_h,
                 s_textures_hs_flat, s_textures_ss_flat, s_textures_vs_flat)
