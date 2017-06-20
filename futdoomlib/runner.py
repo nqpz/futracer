@@ -67,32 +67,32 @@ class Doom:
             xp, zp = pos
 
             # Floor and ceiling.
-            square2d = [[xp - 0.5, zp - 0.5],
-                        [xp + 0.5, zp + 0.5]]
+            square2d = [[xp * f - f // 2, zp * f - f // 2],
+                        [xp * f + f // 2, zp * f + f // 2]]
             triangles2d = square2d_to_triangles2d(square2d)
             for y, texture_name in ((0, cell.floor), (cell.height, cell.ceiling)):
                 i_base, _ = self.textures[texture_name]
-                triangles = [[[x * f, (0 - y) * f, z * f]
+                triangles = [[[x, (0 - y) * f, z]
                               for x, z in t] + [[2, [0, 0, 0], i]]
                              for t, i in zip(triangles2d, (i_base, i_base + 1))]
                 triangles_all.extend(triangles)
                 textures_used.add(texture_name)
 
             # Walls.
-            direcs = [(cell.walls.north, [[xp - 0.5, -1], [xp + 0.5, 0]],
-                       zp - 0.5, lambda p, n: [p[0], p[1], n]),
-                      (cell.walls.east, [[zp - 0.5, -1], [zp + 0.5, 0]],
-                       xp + 0.5, lambda p, n: [n, p[1], p[0]]),
-                      (cell.walls.south, [[xp - 0.5, -1], [xp + 0.5, 0]],
-                       zp + 0.5, lambda p, n: [p[0], p[1], n]),
-                      (cell.walls.west,  [[zp - 0.5, -1], [zp + 0.5, 0]],
-                       xp - 0.5, lambda p, n: [n, p[1], p[0]])]
+            direcs = [(cell.walls.north, [[xp * f - f // 2, -1], [xp * f + f // 2, 0]],
+                       zp * f - f // 2, lambda p, n: [p[0], p[1], n]),
+                      (cell.walls.east, [[zp * f - f // 2, -1], [zp * f + f // 2, 0]],
+                       xp * f + f // 2, lambda p, n: [n, p[1], p[0]]),
+                      (cell.walls.south, [[xp * f - f // 2, -1], [xp * f + f // 2, 0]],
+                       zp * f + f // 2, lambda p, n: [p[0], p[1], n]),
+                      (cell.walls.west,  [[zp * f - f // 2, -1], [zp * f + f // 2, 0]],
+                       xp * f - f // 2, lambda p, n: [n, p[1], p[0]])]
             for textures, square2d, n, fun in direcs:
                 triangles2d = square2d_to_triangles2d(square2d)
                 for y_offset, texture_name in textures:
                     i_base, _ = self.textures[texture_name]
                     triangles = [[(lambda x, y, z:
-                                   [x * f, (y - y_offset) * f, z * f])(*fun(p, n))
+                                   [x, (y - y_offset) * f, z])(*fun(p, n))
                                   for p in t] + [[2, [0, 0, 0], i]]
                                  for t, i in zip(triangles2d, (i_base, i_base + 1))]
                     triangles_all.extend(triangles)
