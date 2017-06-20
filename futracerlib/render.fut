@@ -65,7 +65,11 @@ let barycentric_coordinates
   (triangle: triangle_projected)
   : point_barycentric =
   let ((xp0, yp0, _z0), (xp1, yp1, _z1), (xp2, yp2, _z2)) = triangle
-  let factor = (yp1 - yp2) * (xp0 - xp2) + (xp2 - xp1) * (yp0 - yp2)
+  let factor_base = (yp1 - yp2) * (xp0 - xp2) + (xp2 - xp1) * (yp0 - yp2)
+  let factor = if factor_base == 0
+               then 1 -- If it stays 0, we end up with a divide-by-zero error
+                      -- later on.  Setting it to 1 solves this.
+               else factor_base
   let a = ((yp1 - yp2) * (x - xp2) + (xp2 - xp1) * (y - yp2))
   let b = ((yp2 - yp0) * (x - xp2) + (xp0 - xp2) * (y - yp2))
   let c = factor - a - b
