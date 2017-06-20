@@ -17,10 +17,10 @@ def square2d_to_triangles2d(square2d):
     ]
 
 class Doom:
-    def __init__(self, racer_module, level, scale_to):
+    def __init__(self, racer_module, level_path, scale_to):
         self.racer_module = racer_module
         self.scale_to = scale_to
-        self.level = level or 'start'
+        self.level_path = level_path
         self.size = (640, 360)
         self.view_dist = 400.0
         self.draw_dist = 2000.0
@@ -43,16 +43,15 @@ class Doom:
         self.textures = textures
         self.textures_pre = self.racer.preprocess_textures(textures_list)
 
-        triangles_all_pre = {}
-        textures_used_all = set()
-        for path in resources.maps_paths:
-            gamemap = mapper.load_map(path)
-            triangles, textures_used = self.make_map_triangles(gamemap)
-            name = os.path.basename(path).rsplit('.', 1)[0]
-            triangles_all_pre[name] = self.racer.preprocess_triangles(triangles)
-            textures_used_all.update(textures_used)
-        self.triangles_pre = triangles_all_pre
-        self.textures_used = textures_used_all
+        if not self.level_path:
+            self.level_path = os.path.join(resources.maps_dir, 'start.map')
+        elif self.level_path == '-':
+            self.level_path = 0
+
+        gamemap = mapper.load_map(self.level_path)
+        triangles, textures_used = self.make_map_triangles(gamemap)
+        name = os.path.basename(path).rsplit('.', 1)[0]
+        self.triangles_pre = self.racer.preprocess_triangles(triangles)
         # FIXME: Actually use textures_used to reduce space use.
 
         pygame.font.init()
@@ -142,7 +141,7 @@ class Doom:
 
             frame = self.racer.render_triangles_preprocessed(
                 self.size, self.view_dist, self.draw_dist, camera,
-                self.triangles_pre[self.level], self.textures_pre)
+                self.triangles_pre, self.textures_pre)
             time_end = time.time()
             frame = frame.get()
             futhark_dur_ms = (time_end - time_start) * 1000

@@ -35,3 +35,13 @@ futracer also depends on PyGame, PyPNG (only `futcubes.py` and
 
 Use the arrow keys for now.  Use Page Up and Page Down to adjust the
 view distance for rendering (fun!).
+
+
+## Scripts
+
+`futdoom.py` supports custom maps.  For an example of a (poorly)
+randomly generated map, run:
+
+```
+./futdoomlib/scripts/generate_random_map.py | ./futdoom.py --level -
+```
