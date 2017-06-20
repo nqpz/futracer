@@ -1,0 +1,69 @@
+# Aliases
+floor=stones
+ceiling=flowers
+wall=bricks
+
+# Functions
+bN=
+ floor:floor
+ ceiling:ceiling
+ height:N
+ walls:@standard_walls
+  wall:wall
+  number:N
+
+
+b3b3b3
+b3b3b3
+b3b3b3
+b3b3b3
+b3b3b3
+b3b3b3
+b3b3b3b3b3b3b3b3b3b3b3b3
+b3b3b3b3b3b3b3b3b3b3b3b3
+b3b3b3b3b3b3b3b3b3b3b3b3
+                  b3b3b3
+                  b3b3b3
+                  b3b3b3
+                  b3b3b3
+                  b3b3b3
+                  b3b3b3
+b3b3b3b3b3b3b3b3b3b3b3b3
+b3b3b3b3b3b3b3b3b3b3b3b3
+b3b3b3b3b3b3b3b3b3b3b3b3
+b3b3b3
+b3b3b3
+b3b3b3
+b3b3b3
+b3b3b3
+b3b3b3
+b3b3b3b3b3b3b3b3b3b3b3b3
+b3b3b3b3b3b3b3b3b3b3b3b3
+b3b3b3b3b3b3b3b3b3b3b3b3
+                  b3b3b3
+                  b3b3b3
+                  b3b3b3
+                  b3b3b3
+                  b3b3b3
+                  b3b3b3
+b3b3b3b3b3b3b3b3b3b3b3b3
+b3b3b3b3b3b3b3b3b3b3b3b3
+b3b3b3b3b3b3b3b3b3b3b3b3
+b3b3b3
+b3b3b3
+b3b3b3
+b3b3b3
+b3b3b3
+b3b3b3
+b3b3b3b3b3b3b3b3b3b3b3b3
+b3b3b3b3b3b3b3b3b3b3b3b3
+b3b3b3b3b3b3b3b3b3b3b3b3
+                  b3b3b3
+                  b3b3b3
+                  b3b3b3
+                  b3b3b3
+                  b3b3b3
+                  b3b3b3
+b3b3b3b3b3b3b3b3b3b3b3b3
+b3b3b3b3b3b3b3b3b3b3b3b3
+b3b3b3b3b3b3b3b3b3b3b3b3

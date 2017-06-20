@@ -82,7 +82,9 @@ def parse_map(s):
     for y in range(len(lines)):
         line = lines[y]
         for x in range(0, len(line), 2):
-            cells[(x // 2, y)] = line[x:x + 2]
+            val = line[x:x + 2]
+            if val.strip():
+                cells[(x // 2, y)] = val
 
     raw = GameMapRaw(aliases, functions, cells)
     return raw
