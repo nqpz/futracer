@@ -1,0 +1,32 @@
+# Aliases
+floor=squares0
+ceiling=squares1
+wall=stones
+door=spiral
+
+# Functions
+bN=
+ floor:floor
+ ceiling:ceiling
+ height:N
+ walls:@standard_walls
+  wall:wall
+  number:N
+
+dN=
+ floor:floor
+ ceiling:ceiling
+ height:N
+ walls:@walls_with_door
+  wall:wall
+  number:N
+  door:door
+
+
+b2b2b2d2b2b2b2
+b2b2b2b2b2b2b2
+b2b2b2b2b2b2b2
+d2b2b2b2b2b2d2
+b2b2b2b2b2b2b2
+b2b2b2b2b2b2b2
+b2b2b2d2b2b2b2
