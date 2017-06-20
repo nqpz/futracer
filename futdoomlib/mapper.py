@@ -124,6 +124,8 @@ def eval_value(aliases, v):
         v_new = aliases[v]
     except KeyError:
         v_new = v
+    if isinstance(v_new, str) and v_new.startswith('HSV'):
+        v_new = ('hsv', list(map(float, v_new.split()[1:])))
     return v_new
 
 def call_builtin(raw, aliases, pos, name, args):

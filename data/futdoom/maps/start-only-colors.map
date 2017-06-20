@@ -1,0 +1,34 @@
+# Same as start.map, but with colors instead of textures.
+
+# Aliases
+floor=HSV 14.0 0.5 0.5
+ceiling=HSV 173.0 0.5 0.5
+wall=HSV 0.0 0.0 0.5
+door=HSV 231.0 1.0 1.0
+
+# Functions
+bN=
+ floor:floor
+ ceiling:ceiling
+ height:N
+ walls:@standard_walls
+  wall:wall
+  number:N
+
+dN=
+ floor:floor
+ ceiling:ceiling
+ height:N
+ walls:@walls_with_door
+  wall:wall
+  number:N
+  door:door
+
+
+b2b2b2d2b2b2b2
+b2b2b2b2b2b2b2
+b2b2b2b2b2b2b2
+d2b2b2b2b2b2d2
+b2b2b2b2b2b2b2
+b2b2b2b2b2b2b2
+b2b2b2d2b2b2b2

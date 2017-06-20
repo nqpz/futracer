@@ -70,13 +70,20 @@ class Doom:
             square2d = [[xp * f - f // 2, zp * f - f // 2],
                         [xp * f + f // 2, zp * f + f // 2]]
             triangles2d = square2d_to_triangles2d(square2d)
-            for y, texture_name in ((0, cell.floor), (cell.height, cell.ceiling)):
-                i_base, _ = self.textures[texture_name]
+            for y, texture in ((0, cell.floor), (cell.height, cell.ceiling)):
+                if isinstance(texture, tuple):
+                    assert texture[0] == 'hsv'
+                    hsv = texture[1]
+                    texfun = lambda _: [1, hsv, 0]
+                    i_base = 0 # Doesn't matter.
+                else:
+                    i_base, _ = self.textures[texture]
+                    textures_used.add(texture)
+                    texfun = lambda i: [2, [0, 0, 0], i]
                 triangles = [[[x, (0 - y) * f, z]
-                              for x, z in t] + [[2, [0, 0, 0], i]]
+                              for x, z in t] + [texfun(i)]
                              for t, i in zip(triangles2d, (i_base, i_base + 1))]
                 triangles_all.extend(triangles)
-                textures_used.add(texture_name)
 
             # Walls.
             direcs = [(cell.walls.north, [[xp * f - f // 2, -1], [xp * f + f // 2, 0]],
@@ -89,14 +96,21 @@ class Doom:
                        xp * f - f // 2, lambda p, n: [n, p[1], p[0]])]
             for textures, square2d, n, fun in direcs:
                 triangles2d = square2d_to_triangles2d(square2d)
-                for y_offset, texture_name in textures:
-                    i_base, _ = self.textures[texture_name]
+                for y_offset, texture in textures:
+                    if isinstance(texture, tuple):
+                        assert texture[0] == 'hsv'
+                        hsv = texture[1]
+                        texfun = lambda _: [1, hsv, 0]
+                        i_base = 0 # Doesn't matter.
+                    else:
+                        i_base, _ = self.textures[texture]
+                        textures_used.add(texture)
+                        texfun = lambda i: [2, [0, 0, 0], i]
                     triangles = [[(lambda x, y, z:
                                    [x, (y - y_offset) * f, z])(*fun(p, n))
-                                  for p in t] + [[2, [0, 0, 0], i]]
+                                  for p in t] + [texfun(i)]
                                  for t, i in zip(triangles2d, (i_base, i_base + 1))]
                     triangles_all.extend(triangles)
-                    textures_used.add(texture_name)
 
         return triangles_all, textures_used
 

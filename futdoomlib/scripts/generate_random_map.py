@@ -1,8 +1,22 @@
 #!/usr/bin/env python3
 
+import sys
 import random
 
-tiling_textures = ['stones', 'flowers', 'bricks', 'lines', 'squares0', 'squares1']
+try:
+    size = int(sys.argv[1])
+except Exception:
+    size = 50
+
+colors_only = sys.argv[2]
+
+if colors_only:
+    tiling_textures = ['HSV {} {} {}'.format(random.random() * 360.0,
+                                             random.random() / 2.0 + 0.5,
+                                             random.random() / 2.0 + 0.5)
+                       for i in range(10)]
+else:
+    tiling_textures = ['stones', 'flowers', 'bricks', 'lines', 'squares0', 'squares1']
 
 def t():
     return random.choice(tiling_textures)
@@ -20,8 +34,6 @@ for letter in letters:
   number:N\
 '''.format(letter, t(), t(), t()))
 
-
-size = 50
 
 m = [['  ' for _ in range(size)]
      for _ in range(size)]
