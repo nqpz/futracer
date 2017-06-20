@@ -116,10 +116,7 @@ let color_point
          let yi' = clamp yi 0 (texture_h - 1)
          let xi' = clamp xi 0 (texture_w - 1)
          in unsafe double_tex[yi', xi']
-         -- in if xi >= 0 && xi < texture_w && yi >= 0 && yi < texture_h
-         --    then unsafe double_tex[yi, xi]
-         --    else (0.0, 0.0, 0.0) -- not in triangle
-    else (0.0, 0.0, 0.0) -- error
+    else (0.0, 0.0, 0.0) -- unsupported input
   let flashlight_brightness = 2.0 * 10.0**5.0
   let v_factor = f32.min 1.0 (flashlight_brightness
                               / (z ** 2.0))
@@ -177,7 +174,7 @@ let render_triangles_redomap
                                  then (true, z1, hsv1)
                                  else if (in_triangle0 && z0 > 0.0 &&
                                           in_triangle1 && z1 > 0.0 && z0 == z1)
-                                 then (true, z0, hsv0) --hsv_average hsv0 hsv1)
+                                 then (true, z0, hsv_average hsv0 hsv1)
                                  else neutral_element)
                               neutral_element
                               (zip is_insides z_values colors)))

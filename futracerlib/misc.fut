@@ -29,11 +29,7 @@ let in_range (t: i32) (a: i32) (b: i32): bool =
   (a < b && a <= t && t <= b) || (b <= a && b <= t && t <= a)
 
 let clamp (t: i32) (a: i32) (b: i32): i32 =
-  if t < a
-  then a
-  else if t > b
-  then b
-  else t
+  i32.min (i32.max t a) b
 
 let within_bounds
   (smallest: i32) (highest: i32)
