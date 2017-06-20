@@ -28,6 +28,13 @@ let fmod (a: f32) (m: f32): f32 =
 let in_range (t: i32) (a: i32) (b: i32): bool =
   (a < b && a <= t && t <= b) || (b <= a && b <= t && t <= a)
 
+let clamp (t: i32) (a: i32) (b: i32): i32 =
+  if t < a
+  then a
+  else if t > b
+  then b
+  else t
+
 let within_bounds
   (smallest: i32) (highest: i32)
   (n: i32): i32 =

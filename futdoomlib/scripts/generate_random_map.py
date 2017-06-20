@@ -8,7 +8,7 @@ try:
 except Exception:
     size = 50
 
-colors_only = sys.argv[2]
+colors_only = len(sys.argv) > 2
 
 if colors_only:
     tiling_textures = ['HSV {} {} {}'.format(random.random() * 360.0,
