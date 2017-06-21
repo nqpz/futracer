@@ -65,18 +65,17 @@ let barycentric_coordinates
   (triangle: triangle_projected)
   : point_barycentric =
   let ((xp0, yp0, _z0), (xp1, yp1, _z1), (xp2, yp2, _z2)) = triangle
-  let factor_base = (yp1 - yp2) * (xp0 - xp2) + (xp2 - xp1) * (yp0 - yp2)
-  let factor = factor_base | i32 (factor_base == 0)
-  -- If 'factor' is 0, we end up with a divide-by-zero error later on.  Setting
-  -- it to 1 in that case solves this.
-  let a = ((yp1 - yp2) * (x - xp2) + (xp2 - xp1) * (y - yp2))
-  let b = ((yp2 - yp0) * (x - xp2) + (xp0 - xp2) * (y - yp2))
-  let c = factor - a - b
-  let factor' = f32 factor
-  let an = f32 a / factor'
-  let bn = f32 b / factor'
-  let cn = 1.0 - an - bn
-  in (factor, (a, b, c), (an, bn, cn))
+  let factor = (yp1 - yp2) * (xp0 - xp2) + (xp2 - xp1) * (yp0 - yp2)
+  in if factor != 0 -- Avoid division by zero.
+     then let a = ((yp1 - yp2) * (x - xp2) + (xp2 - xp1) * (y - yp2))
+          let b = ((yp2 - yp0) * (x - xp2) + (xp0 - xp2) * (y - yp2))
+          let c = factor - a - b
+          let factor' = f32 factor
+          let an = f32 a / factor'
+          let bn = f32 b / factor'
+          let cn = 1.0 - an - bn
+          in (factor, (a, b, c), (an, bn, cn))
+     else (1, (-1, -1, -1), (-1.0, -1.0, -1.0)) -- Don't draw.
 
 let is_inside_triangle
   ((factor, (a, b, c), (_an, _bn, _cn)): point_barycentric)
