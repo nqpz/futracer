@@ -174,8 +174,8 @@ let render_triangles_redomap
                                  else if (in_triangle1 && z1 >= 0.0 &&
                                           (z0 < 0.0 || !in_triangle0 || z1 < z0))
                                  then (true, z1, hsv1)
-                                 else if (in_triangle0 && z0 > 0.0 &&
-                                          in_triangle1 && z1 > 0.0 && z0 == z1)
+                                 else if (in_triangle0 && z0 >= 0.0 &&
+                                          in_triangle1 && z1 >= 0.0 && z0 == z1)
                                  then (true, z0, hsv_average hsv0 hsv1)
                                  else neutral_element)
                               neutral_element
@@ -207,7 +207,7 @@ let render_triangles_scatter_bbox
    (z_new: f32)
    (in_triangle_new: bool)
    : (i32, pixel, f32) =
-   if in_triangle_new && z_new >= 0.0 && z_new < z_cur
+   if in_triangle_new && z_new >= 0.0 && (z_cur < 0.0 || z_new < z_cur)
    then (i, p_new, z_new)
    else (-1, 0u32, 0.0f32)
 
