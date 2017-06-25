@@ -151,7 +151,7 @@ class FutCubes:
             frame = self.racer.render_triangles(
                 self.size, self.view_dist, self.draw_dist, camera,
                 [dynamic_triangle], triangles_pre,
-                None, textures_pre, futracer.APPROACH_SCATTER_BBOX)
+                None, textures_pre, self.render_approach)
             time_end = time.time()
             frame = frame.get()
             futhark_dur_ms = (time_end - time_start) * 1000
