@@ -9,7 +9,11 @@ import pyopencl.array
 import futracerlib
 
 
-APPROACH_REDOMAP, APPROACH_SCATTER_BBOX = range(1, 3)
+render_approaches_map = {
+    'redomap': 1,
+    'scatter_bbox': 2,
+}
+render_approaches = list(render_approaches_map.keys())
 
 class FutRacer:
     def __init__(self):
@@ -137,10 +141,7 @@ class FutRacer:
         (textures_len, texture_w, texture_h,
          s_textures_hs_flat, s_textures_ss_flat, s_textures_vs_flat) = textures_pre
 
-        if render_approach == 'redomap':
-            render_approach = APPROACH_REDOMAP
-        elif render_approach == 'scatter_bbox':
-            render_approach = APPROACH_SCATTER_BBOX
+        render_approach = render_approaches_map[render_approach]
 
         return self.futhark.render_triangles_raw(
             render_approach, w, h, view_dist, draw_dist,

@@ -210,9 +210,9 @@ def main(args):
     arg_parser.add_argument('--size', type=size, metavar='WIDTHxHEIGHT',
                             help='set the size of the racing game window')
     arg_parser.add_argument('--render-approach',
-                            choices=['redomap', 'scatter_bbox'],
+                            choices=futracer.render_approaches,
                             default='redomap',
-                            help='choose how to render the frame')
+                            help='choose how to render a frame')
 
     args = arg_parser.parse_args(args)
 

@@ -182,16 +182,16 @@ let render_triangles_scatter_bbox
      (within_bounds 0i32 (w - 1) (i32.max (i32.max x0 x1) x2),
       within_bounds 0i32 (h - 1) (i32.max (i32.max y0 y1) y2)))
 
- let merge_colors
-   (i: i32)
-   (z_cur: f32)
-   (p_new: pixel)
-   (z_new: f32)
-   (in_triangle_new: bool)
-   : (i32, pixel, f32) =
-   if in_triangle_new && z_new >= 0.0 && (z_cur < 0.0 || z_new < z_cur)
-   then (i, p_new, z_new)
-   else (-1, 0u32, 0.0f32)
+  let merge_colors
+    (i: i32)
+    (z_cur: f32)
+    (p_new: pixel)
+    (z_new: f32)
+    (in_triangle_new: bool)
+    : (i32, pixel, f32) =
+    if in_triangle_new && z_new >= 0.0 && (z_cur < 0.0 || z_new < z_cur)
+    then (i, p_new, z_new)
+    else (-1, 0u32, 0.0f32)
 
   let pixels_initial = replicate (w * h) 0u32
   let z_values_initial = replicate (w * h) f32.inf

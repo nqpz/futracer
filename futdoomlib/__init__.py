@@ -2,16 +2,22 @@ import argparse
 
 import futdoomlib.runner as runner
 
-def main(racer_module, args):
+def main(futracer, args):
     def size(s):
         return tuple(map(int, s.split('x')))
 
     arg_parser = argparse.ArgumentParser(description='DOOM.  Use the arrow keys to move around.  Interact with space.')
-    arg_parser.add_argument('--level',
+    arg_parser.add_argument('--level-path',
                             help='play this level from (defaults to "data/futdoom/maps/start.map")')
     arg_parser.add_argument('--scale-to', type=size, metavar='WIDTHxHEIGHT',
                             help='scale the frames to this size when showing them')
+    arg_parser.add_argument('--render-approach',
+                            choices=futracer.render_approaches,
+                            default='redomap',
+                            help='choose how to render a frame')
     args = arg_parser.parse_args(args)
 
-    doom = runner.Doom(racer_module, args.level, args.scale_to)
+    doom = runner.Doom(futracer, level_path=args.level_path,
+                       scale_to=args.scale_to,
+                       render_approach=args.render_approach)
     return doom.run()

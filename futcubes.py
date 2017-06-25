@@ -213,14 +213,15 @@ def main(args):
     arg_parser.add_argument('--just-colors', action='store_true',
                             help='use random colors instead of the pretty texture')
     arg_parser.add_argument('--render-approach',
-                            choices=['redomap', 'scatter_bbox'],
+                            choices=futracer.render_approaches,
                             default='redomap',
-                            help='choose how to render the frame')
+                            help='choose how to render a frame')
 
     args = arg_parser.parse_args(args)
 
     cubes = FutCubes(size=args.size, n_cubes=args.cubes,
-                     just_colors=args.just_colors)
+                     just_colors=args.just_colors,
+                     render_approach=args.render_approach)
     return cubes.run()
 
 if __name__ == '__main__':

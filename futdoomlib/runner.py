@@ -17,10 +17,13 @@ def square2d_to_triangles2d(square2d):
     ]
 
 class Doom:
-    def __init__(self, racer_module, level_path, scale_to):
+    def __init__(self, racer_module, level_path, scale_to=None, render_approach=None):
         self.racer_module = racer_module
-        self.scale_to = scale_to
         self.level_path = level_path
+        self.scale_to = scale_to
+        self.render_approach = render_approach
+        if render_approach is None:
+            render_approach = 'redomap'
         self.size = (640, 360)
         self.view_dist = 400.0
         self.draw_dist = 2000.0
@@ -155,7 +158,7 @@ class Doom:
 
             frame = self.racer.render_triangles_preprocessed(
                 self.size, self.view_dist, self.draw_dist, camera,
-                self.triangles_pre, self.textures_pre)
+                self.triangles_pre, self.textures_pre, self.render_approach)
             time_end = time.time()
             frame = frame.get()
             futhark_dur_ms = (time_end - time_start) * 1000
