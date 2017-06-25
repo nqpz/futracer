@@ -130,61 +130,43 @@ let render_triangles_redomap
   (surface_textures: [][#texture_h][#texture_w]hsv)
   (w: i32) (h: i32)
   : [w][h]pixel =
-  let coordinates =
-    reshape (w * h)
-    (map (\(x: i32): [h](i32, i32) ->
-            map (\(y: i32): (i32, i32) ->
-                   (x, y))
-                (iota h))
-         (iota w))
+  let each_pixel
+    (pixel_index: i32): pixel =
+    let p = (pixel_index / h, pixel_index % h)
+    let each_triangle
+      (t: triangle_projected)
+      (surf: surface)
+      : (bool, f32, hsv) =
+      let bary = barycentric_coordinates p t
+      let in_triangle = is_inside_triangle bary
+      let z = interpolate_z t bary
+      let color = color_point surface_textures surf z bary
+      in (in_triangle, z, color)
 
-  let baryss = map (\(p: i32racer.point2D): [tn]point_barycentric ->
-                      map (barycentric_coordinates p)
-                          triangles_projected)
-                   coordinates
+    let neutral_info = (false, -1.0, (0.0, 0.0, 0.0))
+    let merge_colors
+      ((in_triangle0, z0, hsv0): (bool, f32, hsv))
+      ((in_triangle1, z1, hsv1): (bool, f32, hsv))
+      : (bool, f32, hsv) =
+      if (in_triangle0 && z0 >= 0.0 &&
+          (z1 < 0.0 || !in_triangle1 || z0 < z1))
+      then (true, z0, hsv0)
+      else if (in_triangle1 && z1 >= 0.0 &&
+               (z0 < 0.0 || !in_triangle0 || z1 < z0))
+      then (true, z1, hsv1)
+      else if (in_triangle0 && z0 >= 0.0 &&
+               in_triangle1 && z1 >= 0.0 && z0 == z1)
+      then (true, z0, hsv_average hsv0 hsv1)
+      else neutral_info
 
-  let is_insidess = map (\(barys: [tn]point_barycentric): [tn]bool ->
-                           map is_inside_triangle barys)
-                        baryss
+    let triangles_infos = map each_triangle triangles_projected surfaces
+    let (_in_triangle, _z, color) =
+      reduce_comm merge_colors neutral_info triangles_infos
+    in rgb_to_pixel (hsv_to_rgb color)
 
-  let z_valuess = map (\(barys: [tn]point_barycentric): [tn]f32 ->
-                         map interpolate_z triangles_projected barys)
-                      baryss
-
-  let colorss = map (\(z_values: [tn]f32)
-                      (barys: [tn]point_barycentric): [tn]hsv ->
-                       map (color_point surface_textures)
-                           surfaces z_values barys)
-                    z_valuess baryss
-
-  let (_mask, _z_values, colors) =
-    unzip (map (\(is_insides: [tn]bool)
-                 (z_values: [tn]f32)
-                 (colors: [tn]hsv)
-                 : (bool, f32, hsv) ->
-                  let neutral_element = (false, -1.0, (0.0, 0.0, 0.0)) in
-                  (reduce_comm (\((in_triangle0, z0, hsv0)
-                                : (bool, f32, hsv))
-                                ((in_triangle1, z1, hsv1)
-                                : (bool, f32, hsv))
-                               : (bool, f32, hsv) ->
-                                 if (in_triangle0 && z0 >= 0.0 &&
-                                     (z1 < 0.0 || !in_triangle1 || z0 < z1))
-                                 then (true, z0, hsv0)
-                                 else if (in_triangle1 && z1 >= 0.0 &&
-                                          (z0 < 0.0 || !in_triangle0 || z1 < z0))
-                                 then (true, z1, hsv1)
-                                 else if (in_triangle0 && z0 >= 0.0 &&
-                                          in_triangle1 && z1 >= 0.0 && z0 == z1)
-                                 then (true, z0, hsv_average hsv0 hsv1)
-                                 else neutral_element)
-                              neutral_element
-                              (zip is_insides z_values colors)))
-               is_insidess z_valuess colorss)
-
-  let pixels = map (\x -> rgb_to_pixel (hsv_to_rgb x)) colors
-  let frame = reshape (w, h) pixels
-  in frame
+  let pixel_indices = iota (w * h)
+  let pixels = map each_pixel pixel_indices
+  in reshape (w, h) pixels
 
 let render_triangles_scatter_bbox
   (triangles_projected: [#tn]triangle_projected)
