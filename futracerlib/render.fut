@@ -1,8 +1,8 @@
 import "/futlib/math"
 
-import "futracerlib/misc"
-import "futracerlib/color"
-import "futracerlib/transformations"
+import "/futracerlib/misc"
+import "/futracerlib/color"
+import "/futracerlib/transformations"
 
 default (i32, f32)
 
@@ -196,7 +196,7 @@ let render_triangles_scatter_bbox
   let pixels_initial = replicate (w * h) 0u32
   let z_values_initial = replicate (w * h) f32.inf
   let (pixels, _z_values) =
-    loop ((pixels, z_values) = (pixels_initial, z_values_initial))
+    loop (pixels, z_values) = (pixels_initial, z_values_initial)
     for i < tn do
     let triangle_projected = triangles_projected[i]
     let surface = surfaces[i]

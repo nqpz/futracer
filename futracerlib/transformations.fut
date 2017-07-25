@@ -1,6 +1,6 @@
 import "/futlib/math"
 
-import "futracerlib/misc"
+import "/futracerlib/misc"
 
 default (i32, f32)
 
