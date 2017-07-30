@@ -110,6 +110,9 @@ let color_point
            else ((1.0, 1.0),
                  (1.0, 0.0),
                  (0.0, 1.0))
+         -- FIXME: This results in a slightly distorted image, as it is based on
+         -- the projected triangle, not the actual triangle.  This is fine more
+         -- small triangles, but noticable for large triangles.
          let (an, bn, cn) = #3 bary
          let yn = an * yn0 + bn * yn1 + cn * yn2
          let xn = an * xn0 + bn * xn1 + cn * xn2
