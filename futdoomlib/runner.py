@@ -23,10 +23,11 @@ class Doom:
         self.scale_to = scale_to
         self.render_approach = render_approach
         if render_approach is None:
-            render_approach = 'redomap'
+            render_approach = 'chunked'
         self.size = (640, 360)
         self.view_dist = 400.0
         self.draw_dist = 2000.0
+        self.n_draw_rects = [1, 1]
 
     def run(self):
         self.racer = self.racer_module.FutRacer()
@@ -170,6 +171,10 @@ class Doom:
 
             self.message('FPS: {:.02f}'.format(fps), (10, 10))
             self.message('Futhark: {:.02f} ms'.format(futhark_dur_ms), (10, 40))
+            self.message('Rendering approach: {}'.format(self.render_approach), (10, 70))
+            if self.render_approach == 'chunked':
+                self.message('# draw rects: x: {}, y: {}'.format(
+                    *self.n_draw_rects), (10, 100))
 
             pygame.display.flip()
 
@@ -183,6 +188,20 @@ class Doom:
                         return 0
                     if event.key in keys_holding.keys():
                         keys_holding[event.key] = True
+
+                    if event.key == pygame.K_r:
+                        self.render_approach = self.racer_module.next_elem(
+                            self.racer_module.render_approaches,
+                            self.render_approach)
+
+                    if event.key == pygame.K_a:
+                        self.n_draw_rects[0] = max(1, self.n_draw_rects[0] - 1)
+                    if event.key == pygame.K_d:
+                        self.n_draw_rects[0] = self.n_draw_rects[0] + 1
+                    if event.key == pygame.K_w:
+                        self.n_draw_rects[1] = max(1, self.n_draw_rects[1] - 1)
+                    if event.key == pygame.K_s:
+                        self.n_draw_rects[1] = self.n_draw_rects[1] + 1
 
                 elif event.type == pygame.KEYUP:
                     if event.key in keys_holding.keys():

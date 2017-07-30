@@ -10,10 +10,15 @@ import futracerlib
 
 
 render_approaches_map = {
-    'redomap': 1,
+    'chunked': 1,
     'scatter_bbox': 2,
 }
 render_approaches = list(render_approaches_map.keys())
+
+def next_elem(xs, y):
+    for i in range(len(xs)):
+        if xs[i] == y:
+            return xs[(i + 1) % len(xs)]
 
 class FutRacer:
     def __init__(self):
@@ -130,7 +135,8 @@ class FutRacer:
 
     def render_triangles_preprocessed(self, size, view_dist, draw_dist, camera,
                                       triangles_pre, textures_pre,
-                                      render_approach='redomap'):
+                                      render_approach='chunked',
+                                      n_draw_rects=(1, 1)):
         w, h = size
 
         ((c_x, c_y, c_z), (c_ax, c_ay, c_az)) = camera
@@ -144,7 +150,8 @@ class FutRacer:
         render_approach = render_approaches_map[render_approach]
 
         return self.futhark.render_triangles_raw(
-            render_approach, w, h, view_dist, draw_dist,
+            render_approach, n_draw_rects[0], n_draw_rects[1],
+            w, h, view_dist, draw_dist,
             x0s, y0s, z0s, x1s, y1s, z1s, x2s, y2s, z2s,
             s_types, s_hsv_hs, s_hsv_ss, s_hsv_vs, s_indices,
             textures_len, texture_w, texture_h,
@@ -154,7 +161,8 @@ class FutRacer:
     def render_triangles(self, size, view_dist, draw_dist, camera,
                          triangles, triangles_pre,
                          textures, textures_pre,
-                         render_approach='redomap'):
+                         render_approach='chunked',
+                         n_draw_rects=(1, 1)):
         if triangles is None:
             triangles_pre1 = triangles_pre
         else:
@@ -178,4 +186,4 @@ class FutRacer:
         return self.render_triangles_preprocessed(
             size, view_dist, draw_dist, camera,
             triangles_pre1, textures_pre1,
-            render_approach)
+            render_approach, n_draw_rects)

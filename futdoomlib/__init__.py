@@ -13,7 +13,7 @@ def main(futracer, args):
                             help='scale the frames to this size when showing them')
     arg_parser.add_argument('--render-approach',
                             choices=futracer.render_approaches,
-                            default='redomap',
+                            default='chunked',
                             help='choose how to render a frame')
     args = arg_parser.parse_args(args)
 

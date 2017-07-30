@@ -20,6 +20,8 @@ entry translate_point_raw
 entry render_triangles_raw
   (
    render_approach: render_approach_id,
+   n_draw_rects_x: i32,
+   n_draw_rects_y: i32,
    w: i32,
    h: i32,
    view_dist: f32,
@@ -51,6 +53,7 @@ entry render_triangles_raw
    c_ay: f32,
    c_az: f32
   ): [w][h]pixel =
+  let n_draw_rects = (n_draw_rects_x, n_draw_rects_y)
   let camera = ((c_x, c_y, c_z), (c_ax, c_ay, c_az))
   let p0s = zip x0s y0s z0s
   let p1s = zip x1s y1s z1s
@@ -63,5 +66,6 @@ entry render_triangles_raw
                                       surface_textures_flat_hsv_ss
                                       surface_textures_flat_hsv_vs)
   let triangles_with_surfaces = zip triangles surfaces
-  in render_triangles_in_view render_approach camera triangles_with_surfaces
+  in render_triangles_in_view render_approach n_draw_rects
+                              camera triangles_with_surfaces
                               surface_textures w h view_dist draw_dist

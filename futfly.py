@@ -20,10 +20,11 @@ class FutFly:
             size = (800, 600)
         self.size = size
         if render_approach is None:
-            render_approach = 'redomap'
+            render_approach = 'chunked'
         self.render_approach = render_approach
         self.view_dist = 600.0
         self.draw_dist = 2000.0
+        self.n_draw_rects = [1, 1]
 
     def fly(self):
         # Setup pygame.
@@ -148,7 +149,7 @@ class FutFly:
             frame = self.racer.render_triangles(
                 self.size, self.view_dist, self.draw_dist, camera,
                 None, triangles_pre,
-                None, textures_pre, self.render_approach)
+                None, textures_pre, self.render_approach, self.n_draw_rects)
             time_end = time.time()
             frame = frame.get()
             futhark_dur_ms = (time_end - time_start) * 1000
@@ -156,6 +157,10 @@ class FutFly:
 
             self.message('FPS: {:.02f}'.format(fps), (10, 10))
             self.message('Futhark: {:.02f} ms'.format(futhark_dur_ms), (10, 40))
+            self.message('Rendering approach: {}'.format(self.render_approach), (10, 70))
+            if self.render_approach == 'chunked':
+                self.message('# draw rects: x: {}, y: {}'.format(
+                    *self.n_draw_rects), (10, 100))
 
             pygame.display.flip()
 
@@ -169,6 +174,18 @@ class FutFly:
                         return 0
                     if event.key in keys_holding.keys():
                         keys_holding[event.key] = True
+
+                    if event.key == pygame.K_r:
+                        self.render_approach = futracer.next_elem(futracer.render_approaches,
+                                                                  self.render_approach)
+                    if event.key == pygame.K_a:
+                        self.n_draw_rects[0] = max(1, self.n_draw_rects[0] - 1)
+                    if event.key == pygame.K_d:
+                        self.n_draw_rects[0] = self.n_draw_rects[0] + 1
+                    if event.key == pygame.K_w:
+                        self.n_draw_rects[1] = max(1, self.n_draw_rects[1] - 1)
+                    if event.key == pygame.K_s:
+                        self.n_draw_rects[1] = self.n_draw_rects[1] + 1
 
                 elif event.type == pygame.KEYUP:
                     if event.key in keys_holding.keys():
@@ -211,7 +228,7 @@ def main(args):
                             help='set the size of the racing game window')
     arg_parser.add_argument('--render-approach',
                             choices=futracer.render_approaches,
-                            default='redomap',
+                            default='chunked',
                             help='choose how to render a frame')
 
     args = arg_parser.parse_args(args)

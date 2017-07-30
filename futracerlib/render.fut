@@ -124,13 +124,16 @@ let color_point
                               / (z ** 2.0))
   in (h, s, v * v_factor)
 
-let render_triangles_redomap
+let render_triangles_chunked
   (triangles_projected: [#tn]triangle_projected)
   (surfaces: [#tn]surface)
   (surface_textures: [][#texture_h][#texture_w]hsv)
   (w: i32) (h: i32)
+  ((n_rects_x, n_rects_y): (i32, i32))
   : [w][h]pixel =
   let each_pixel
+    (rect_triangles_projected: []triangle_projected)
+    (rect_surfaces: []surface)
     (pixel_index: i32): pixel =
     let p = (pixel_index / h, pixel_index % h)
     let each_triangle
@@ -159,14 +162,75 @@ let render_triangles_redomap
       then (true, z0, hsv_average hsv0 hsv1)
       else neutral_info
 
-    let triangles_infos = map each_triangle triangles_projected surfaces
+    let triangles_infos = map each_triangle rect_triangles_projected rect_surfaces
     let (_in_triangle, _z, color) =
       reduce_comm merge_colors neutral_info triangles_infos
     in rgb_to_pixel (hsv_to_rgb color)
 
-  let pixel_indices = iota (w * h)
-  let pixels = map each_pixel pixel_indices
-  in reshape (w, h) pixels
+  let rect_in_rect
+    (((x0a, y0a), (x1a, y1a)): rectangle)
+    (((x0b, y0b), (x1b, y1b)): rectangle): bool =
+    ! (x1a <= x0b || x0a >= x1b || y1a <= y0b || y0a >= y1b)
+
+  let bounding_box
+    (((x0, y0, _z0),
+      (x1, y1, _z1),
+      (x2, y2, _z2)): triangle_projected): rectangle =
+    (((i32.min (i32.min x0 x1) x2),
+      (i32.min (i32.min y0 y1) y2)),
+     ((i32.max (i32.max x0 x1) x2),
+      (i32.max (i32.max y0 y1) y2)))
+
+  -- Does a triangle intersect with a rectangle?  FIXME: This might produce
+  -- false positives (which is not a problem for the renderer, but could be more
+  -- efficient).
+  let triangle_in_rect
+    (rect: rectangle)
+    (tri: triangle_projected): bool =
+    let rect1 = bounding_box tri
+    in rect_in_rect rect1 rect || rect_in_rect rect rect1
+
+  let each_rect
+    (rect: rectangle)
+    (pixel_indices: [#bn]i32): [bn]pixel =
+    let (rect_triangles_projected, rect_surfaces) =
+      unzip (filter (\(t, _) -> triangle_in_rect rect t) (zip triangles_projected surfaces))
+    in map (each_pixel rect_triangles_projected rect_surfaces) pixel_indices
+
+  let rect_pixel_indices
+    (((x0, y0), (x1, y1)): rectangle): []i32 =
+    let (xlen, ylen) = (x1 - x0, y1 - y0)
+    let xs = map (+ x0) (iota xlen)
+    let ys = map (+ y0) (iota ylen)
+    in reshape (xlen * ylen) (map (\x -> map (\y -> x * h + y) ys) xs)
+
+  in if n_rects_x == 1 && n_rects_y == 1
+     then -- Keep it simple.  This will be a redomap.
+          let pixel_indices = iota (w * h)
+          let pixels = map (each_pixel triangles_projected surfaces) pixel_indices
+          in reshape (w, h) pixels
+     else -- Split into rectangles, each with their own triangles, and use scatter
+          -- in the end.
+          let x_size = w / n_rects_x + i32 (w % n_rects_x > 0)
+          let y_size = h / n_rects_y + i32 (h % n_rects_y > 0)
+          let rects = reshape (n_rects_x * n_rects_y)
+                              (map (\x -> map (\y ->
+                                               let x0 = x * x_size
+                                               let y0 = y * y_size
+                                               let x1 = x0 + x_size
+                                               let y1 = y0 + y_size
+                                               in ((x0, y0), (x1, y1)))
+                                    (iota n_rects_y)) (iota n_rects_x))
+          let n_pixels = n_rects_x * n_rects_y * x_size * y_size
+
+          let pixel_indicess = map rect_pixel_indices rects
+          let pixelss = map each_rect rects pixel_indicess
+          let pixel_indices = reshape n_pixels pixel_indicess
+          let pixels = reshape n_pixels pixelss
+          let pixel_indices' = map (\i -> if i < w * h then i else -1) pixel_indices
+          let frame = replicate (w * h) 0u32
+          let frame' = scatter frame pixel_indices' pixels
+          in reshape (w, h) frame'
 
 let render_triangles_scatter_bbox
   (triangles_projected: [#tn]triangle_projected)
@@ -237,6 +301,7 @@ let render_triangles_scatter_bbox
 
 let render_triangles_in_view
   (render_approach: render_approach_id)
+  (n_draw_rects: (i32, i32))
   (camera: camera)
   (triangles_with_surfaces: []triangle_with_surface)
   (surface_textures: [][#texture_h][#texture_w]hsv)
@@ -269,7 +334,8 @@ let render_triangles_in_view
   let (triangles_projected', surfaces') = unzip triangles_close
 
   in if render_approach == 1
-     then render_triangles_redomap triangles_projected' surfaces' surface_textures w h
+     then render_triangles_chunked triangles_projected' surfaces'
+                                   surface_textures w h n_draw_rects
      else if render_approach == 2
      then render_triangles_scatter_bbox triangles_projected' surfaces' surface_textures w h
      else replicate w (replicate h 0u32) -- error
