@@ -17,13 +17,15 @@ def square2d_to_triangles2d(square2d):
     ]
 
 class Doom:
-    def __init__(self, racer_module, level_path, scale_to=None, render_approach=None):
+    def __init__(self, racer_module, level_path, scale_to=None,
+                 render_approach=None, auto_fps=False):
         self.racer_module = racer_module
         self.level_path = level_path
         self.scale_to = scale_to
         self.render_approach = render_approach
         if render_approach is None:
             render_approach = 'chunked'
+        self.auto_fps = auto_fps
         self.size = (640, 360)
         self.view_dist = 400.0
         self.draw_dist = 2000.0
@@ -144,7 +146,7 @@ class Doom:
 
         keys_holding = {}
         for x in [pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT,
-                  pygame.K_PAGEUP, pygame.K_PAGEDOWN]:
+                  pygame.K_PAGEUP, pygame.K_PAGEDOWN, pygame.K_1, pygame.K_2]:
             keys_holding[x] = False
 
         def inf_range():
@@ -169,12 +171,20 @@ class Doom:
                 pygame.surfarray.blit_array(self.screen_base, frame)
                 pygame.transform.scale(self.screen_base, self.scale_to, self.screen)
 
+            if self.auto_fps:
+                if futhark_dur_ms > 20:
+                    self.draw_dist /= 1.1
+                else:
+                    self.draw_dist += 10.0
+
             self.message('FPS: {:.02f}'.format(fps), (10, 10))
             self.message('Futhark: {:.02f} ms'.format(futhark_dur_ms), (10, 40))
-            self.message('Rendering approach: {}'.format(self.render_approach), (10, 70))
+            self.message('Draw distance: {:.02f}{}'.format(
+                self.draw_dist, ' (auto)' if self.auto_fps else ''), (10, 70))
+            self.message('Rendering approach: {}'.format(self.render_approach), (10, 100))
             if self.render_approach == 'chunked':
                 self.message('# draw rects: x: {}, y: {}'.format(
-                    *self.n_draw_rects), (10, 100))
+                    *self.n_draw_rects), (10, 130))
 
             pygame.display.flip()
 
@@ -228,5 +238,10 @@ class Doom:
                 self.view_dist -= 10.0
                 if self.view_dist < 1.0:
                     self.view_dist = 1.0
+
+            if keys_holding[pygame.K_1]:
+                self.draw_dist -= 10.0
+            if keys_holding[pygame.K_2]:
+                self.draw_dist += 10.0
 
             self.clock.tick()

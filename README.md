@@ -33,8 +33,9 @@ futracer also depends on PyGame, PyPNG (only `futcubes.py` and
 
 ## Keyboard controls
 
-Use the arrow keys for now.  Use Page Up and Page Down to adjust the
-view distance for rendering (fun!).
+Use the arrow keys for now.  Use Page Down and Page Up to decrease and
+increase the view distance for rendering (fun!).  Use 1 and 2 to
+decrease and increase the draw distance.
 
 Use R to switch rendering approaches.
 

@@ -15,9 +15,13 @@ def main(futracer, args):
                             choices=futracer.render_approaches,
                             default='chunked',
                             help='choose how to render a frame')
+    arg_parser.add_argument('--auto-fps',
+                            action='store_true',
+                            help='automatically keep the FPS high by dynamically lowering the draw distance (experimental)')
     args = arg_parser.parse_args(args)
 
     doom = runner.Doom(futracer, level_path=args.level_path,
                        scale_to=args.scale_to,
-                       render_approach=args.render_approach)
+                       render_approach=args.render_approach,
+                       auto_fps=args.auto_fps)
     return doom.run()
