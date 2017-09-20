@@ -8,6 +8,7 @@ default (i32, f32)
 
 type render_approach_id = i32
 
+-- FIXME: Use records.
 type triangle = (f32racer.point3D, f32racer.point3D, f32racer.point3D)
 type point_projected = (i32, i32, f32)
 type triangle_projected = (point_projected, point_projected, point_projected)
@@ -111,7 +112,7 @@ let color_point
                  (1.0, 0.0),
                  (0.0, 1.0))
          -- FIXME: This results in a slightly distorted image, as it is based on
-         -- the projected triangle, not the actual triangle.  This is fine more
+         -- the projected triangle, not the actual triangle.  This is fine for
          -- small triangles, but noticable for large triangles.
          let (an, bn, cn) = #3 bary
          let yn = an * yn0 + bn * yn1 + cn * yn2
