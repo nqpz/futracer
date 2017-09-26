@@ -91,7 +91,8 @@ let interpolate_z
   in an * z0 + bn * z1 + cn * z2
 
 let color_point
-  (surface_textures: [][#texture_h][#texture_w]hsv)
+  [texture_h][texture_w]
+  (surface_textures: [][texture_h][texture_w]hsv)
   ((s_t, s_hsv, s_ti): surface)
   (z: f32)
   (bary: point_barycentric)
@@ -129,9 +130,10 @@ let color_point
   in (h, s, v * v_factor)
 
 let render_triangles_chunked
-  (triangles_projected: [#tn]triangle_projected)
-  (surfaces: [#tn]surface)
-  (surface_textures: [][#texture_h][#texture_w]hsv)
+  [tn][texture_h][texture_w]
+  (triangles_projected: [tn]triangle_projected)
+  (surfaces: [tn]surface)
+  (surface_textures: [][texture_h][texture_w]hsv)
   (w: i32) (h: i32)
   ((n_rects_x, n_rects_y): (i32, i32))
   : [w][h]pixel =
@@ -195,8 +197,9 @@ let render_triangles_chunked
     in rect_in_rect rect1 rect || rect_in_rect rect rect1
 
   let each_rect
+    [bn]
     (rect: rectangle)
-    (pixel_indices: [#bn]i32): [bn]pixel =
+    (pixel_indices: [bn]i32): [bn]pixel =
     let (rect_triangles_projected, rect_surfaces) =
       unzip (filter (\(t, _) -> triangle_in_rect rect t) (zip triangles_projected surfaces))
     in map (each_pixel rect_triangles_projected rect_surfaces) pixel_indices
@@ -237,9 +240,10 @@ let render_triangles_chunked
           in reshape (w, h) frame'
 
 let render_triangles_scatter_bbox
-  (triangles_projected: [#tn]triangle_projected)
-  (surfaces: [#tn]surface)
-  (surface_textures: [][#texture_h][#texture_w]hsv)
+  [tn][texture_w][texture_h]
+  (triangles_projected: [tn]triangle_projected)
+  (surfaces: [tn]surface)
+  (surface_textures: [][texture_h][texture_w]hsv)
   (w: i32) (h: i32)
   : [w][h]pixel =
   let bounding_box
@@ -304,11 +308,12 @@ let render_triangles_scatter_bbox
   in frame'
 
 let render_triangles_in_view
+  [texture_h][texture_w]
   (render_approach: render_approach_id)
   (n_draw_rects: (i32, i32))
   (camera: camera)
   (triangles_with_surfaces: []triangle_with_surface)
-  (surface_textures: [][#texture_h][#texture_w]hsv)
+  (surface_textures: [][texture_h][texture_w]hsv)
   (w: i32) (h: i32)
   (view_dist: f32)
   (draw_dist: f32)
