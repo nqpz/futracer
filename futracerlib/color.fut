@@ -43,7 +43,7 @@ let hsv_to_rgb ((h, s, v): hsv): rgb =
                      else (0.0, 0.0, 0.0)
   let m = v - c
   let (r, g, b) = (r0 + m, g0 + m, b0 + m)
-  in (u32 (255.0 * r), u32 (255.0 * g), u32 (255.0 * b))
+  in (u32.f32 (255.0 * r), u32.f32 (255.0 * g), u32.f32 (255.0 * b))
 
 let hsv_average
   ((h0, s0, v0): hsv)

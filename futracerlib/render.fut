@@ -218,8 +218,8 @@ let render_triangles_chunked
           in reshape (w, h) pixels
      else -- Split into rectangles, each with their own triangles, and use scatter
           -- in the end.
-          let x_size = w / n_rects_x + i32 (w % n_rects_x > 0)
-          let y_size = h / n_rects_y + i32 (h % n_rects_y > 0)
+          let x_size = w / n_rects_x + i32.bool (w % n_rects_x > 0)
+          let y_size = h / n_rects_y + i32.bool (h % n_rects_y > 0)
           let rects = reshape (n_rects_x * n_rects_y)
                               (map (\x -> map (\y ->
                                                let x0 = x * x_size
