@@ -51,9 +51,9 @@ let project_triangle
     let z_ratio = if z >= 0.0
                   then (view_dist + z) / view_dist
                   else 1.0 / ((view_dist - z) / view_dist)
-    let x_projected = x / z_ratio + f32 w / 2.0
-    let y_projected = y / z_ratio + f32 h / 2.0
-    in (i32 x_projected, i32 y_projected)
+    let x_projected = x / z_ratio + r32 w / 2.0
+    let y_projected = y / z_ratio + r32 h / 2.0
+    in (t32 x_projected, t32 y_projected)
 
   let ((x0, y0, z0), (x1, y1, z1), (x2, y2, z2)) = triangle
   let (xp0, yp0) = project_point (x0, y0, z0)
@@ -71,9 +71,9 @@ let barycentric_coordinates
      then let a = ((yp1 - yp2) * (x - xp2) + (xp2 - xp1) * (y - yp2))
           let b = ((yp2 - yp0) * (x - xp2) + (xp0 - xp2) * (y - yp2))
           let c = factor - a - b
-          let factor' = f32 factor
-          let an = f32 a / factor'
-          let bn = f32 b / factor'
+          let factor' = r32 factor
+          let an = r32 a / factor'
+          let bn = r32 b / factor'
           let cn = 1.0 - an - bn
           in (factor, (a, b, c), (an, bn, cn))
      else (1, (-1, -1, -1), (-1.0, -1.0, -1.0)) -- Don't draw.
@@ -118,8 +118,8 @@ let color_point
          let (an, bn, cn) = #3 bary
          let yn = an * yn0 + bn * yn1 + cn * yn2
          let xn = an * xn0 + bn * xn1 + cn * xn2
-         let yi = i32 (yn * f32 texture_h)
-         let xi = i32 (xn * f32 texture_w)
+         let yi = t32 (yn * r32 texture_h)
+         let xi = t32 (xn * r32 texture_w)
          let yi' = clamp yi 0 (texture_h - 1)
          let xi' = clamp xi 0 (texture_w - 1)
          in unsafe double_tex[yi', xi']

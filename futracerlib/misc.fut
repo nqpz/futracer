@@ -23,7 +23,7 @@ module i32racer = racer {
 }
 
 let fmod (a: f32) (m: f32): f32 =
-  a - f32 (i32 (a / m)) * m
+  a - r32 (t32 (a / m)) * m
 
 let in_range (t: i32) (a: i32) (b: i32): bool =
   (a < b && a <= t && t <= b) || (b <= a && b <= t && t <= a)
