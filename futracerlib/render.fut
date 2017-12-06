@@ -115,7 +115,7 @@ let color_point
          -- FIXME: This results in a slightly distorted image, as it is based on
          -- the projected triangle, not the actual triangle.  This is fine for
          -- small triangles, but noticable for large triangles.
-         let (an, bn, cn) = #3 bary
+         let (an, bn, cn) = bary.3
          let yn = an * yn0 + bn * yn1 + cn * yn2
          let xn = an * xn0 + bn * xn1 + cn * xn2
          let yi = t32 (yn * r32 texture_h)
@@ -333,9 +333,9 @@ let render_triangles_in_view
     (y0 < 0 && y1 < 0 && y2 < 0) || (y0 >= h && y1 >= h && y2 >= h)
 
   let close_enough (triangle: triangle_projected): bool =
-    (close_enough_dist (#1 triangle) ||
-     close_enough_dist (#2 triangle) ||
-     close_enough_dist (#3 triangle)) &&
+    (close_enough_dist triangle.1 ||
+     close_enough_dist triangle.2 ||
+     close_enough_dist triangle.3) &&
     !(close_enough_fully_out_of_frame triangle)
 
   let triangles_close = filter (\(t, _s) -> close_enough t)
