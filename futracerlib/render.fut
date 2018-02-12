@@ -230,7 +230,7 @@ let render_triangles_chunked
                                     (iota n_rects_y)) (iota n_rects_x))
           let n_pixels = n_rects_x * n_rects_y * x_size * y_size
 
-          let pixel_indicess = map rect_pixel_indices rects
+          let pixel_indicess = unsafe map rect_pixel_indices rects
           let pixelss = map each_rect rects pixel_indicess
           let pixel_indices = reshape n_pixels pixel_indicess
           let pixels = reshape n_pixels pixelss
