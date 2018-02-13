@@ -134,7 +134,8 @@ class Doom:
         self.screen = pygame.display.set_mode(
             self.scale_to if self.scale_to else self.size)
         if self.scale_to:
-            self.screen_base = pygame.Surface(self.size)
+            self.surface_base = pygame.Surface(self.size, depth=32)
+        self.surface = pygame.Surface(self.size, depth=32)
         self.clock = pygame.time.Clock()
 
     def message(self, what, where):
@@ -166,10 +167,11 @@ class Doom:
             frame = frame.get()
             futhark_dur_ms = (time_end - time_start) * 1000
             if not self.scale_to:
-                pygame.surfarray.blit_array(self.screen, frame)
+                pygame.surfarray.blit_array(self.surface, frame)
             else:
-                pygame.surfarray.blit_array(self.screen_base, frame)
-                pygame.transform.scale(self.screen_base, self.scale_to, self.screen)
+                pygame.surfarray.blit_array(self.surface_base, frame)
+                pygame.transform.scale(self.screen_base, self.scale_to, self.surface)
+            self.screen.blit(self.surface, (0, 0))
 
             if self.auto_fps:
                 if futhark_dur_ms > 20:

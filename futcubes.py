@@ -34,6 +34,7 @@ class FutCubes:
         pygame.init()
         pygame.display.set_caption('futcubes')
         self.screen = pygame.display.set_mode(self.size)
+        self.surface = pygame.Surface(self.size, depth=32)
         self.font = pygame.font.Font(None, 36)
         self.clock = pygame.time.Clock()
 
@@ -156,7 +157,8 @@ class FutCubes:
             time_end = time.time()
             frame = frame.get()
             futhark_dur_ms = (time_end - time_start) * 1000
-            pygame.surfarray.blit_array(self.screen, frame)
+            pygame.surfarray.blit_array(self.surface, frame)
+            self.screen.blit(self.surface, (0, 0))
 
             self.message('FPS: {:.02f}'.format(fps), (10, 10))
             self.message('Futhark: {:.02f} ms'.format(futhark_dur_ms), (10, 40))
