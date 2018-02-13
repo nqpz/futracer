@@ -1,5 +1,4 @@
 import "/futlib/math"
-import "/futlib/colour"
 
 import "futracerlib/color"
 import "futracerlib/transformations"
@@ -54,7 +53,7 @@ entry render_triangles_raw
    c_ax: f32,
    c_ay: f32,
    c_az: f32
-  ): [w][h][3]u8 =
+  ): [w][h]pixel =
   let n_draw_rects = (n_draw_rects_x, n_draw_rects_y)
   let camera = ((c_x, c_y, c_z), (c_ax, c_ay, c_az))
   let p0s = zip x0s y0s z0s
@@ -68,7 +67,6 @@ entry render_triangles_raw
                                       surface_textures_flat_hsv_ss
                                       surface_textures_flat_hsv_vs)
   let triangles_with_surfaces = zip triangles surfaces
-  let pixels = render_triangles_in_view render_approach n_draw_rects
-                                        camera triangles_with_surfaces
-                                        surface_textures w h view_dist draw_dist
-  in argb.to_screen (map (\r -> map i32.u32 r) pixels)
+  in render_triangles_in_view render_approach n_draw_rects
+                              camera triangles_with_surfaces
+                              surface_textures w h view_dist draw_dist
