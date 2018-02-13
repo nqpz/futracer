@@ -50,5 +50,5 @@ Y axis.  Sometime in the future this should be chosen automatically.
 randomly generated map, run:
 
 ```
-./futdoomlib/scripts/generate_random_map.py | ./futdoom.py --level -
+./futdoomlib/scripts/generate_random_map.py | ./futdoom.py --auto-fps --level -
 ```
