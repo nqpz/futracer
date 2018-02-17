@@ -138,39 +138,44 @@ let render_triangles_chunked
   ((n_rects_x, n_rects_y): (i32, i32))
   : [w][h]pixel =
   let each_pixel
-    (rect_triangles_projected: []triangle_projected)
+    [rtpn]
+    (rect_triangles_projected: [rtpn]triangle_projected)
     (rect_surfaces: []surface)
     (pixel_index: i32): pixel =
     let p = (pixel_index / h, pixel_index % h)
     let each_triangle
       (t: triangle_projected)
-      (surf: surface)
-      : (bool, f32, hsv) =
+      (i: i32)
+      : (bool, f32, i32) =
       let bary = barycentric_coordinates p t
       let in_triangle = is_inside_triangle bary
       let z = interpolate_z t bary
-      let color = color_point surface_textures surf z bary
-      in (in_triangle, z, color)
+      in (in_triangle, z, i)
 
-    let neutral_info = (false, -1.0, (0.0, 0.0, 0.0))
+    let neutral_info = (false, -1.0, -1)
     let merge_colors
-      ((in_triangle0, z0, hsv0): (bool, f32, hsv))
-      ((in_triangle1, z1, hsv1): (bool, f32, hsv))
-      : (bool, f32, hsv) =
+      ((in_triangle0, z0, i0): (bool, f32, i32))
+      ((in_triangle1, z1, i1): (bool, f32, i32))
+      : (bool, f32, i32) =
       if (in_triangle0 && z0 >= 0.0 &&
           (z1 < 0.0 || !in_triangle1 || z0 < z1))
-      then (true, z0, hsv0)
+      then (true, z0, i0)
       else if (in_triangle1 && z1 >= 0.0 &&
                (z0 < 0.0 || !in_triangle0 || z1 < z0))
-      then (true, z1, hsv1)
+      then (true, z1, i1)
       else if (in_triangle0 && z0 >= 0.0 &&
                in_triangle1 && z1 >= 0.0 && z0 == z1)
-      then (true, z0, hsv_average hsv0 hsv1)
+      then (true, z0, i0) -- Just pick one of them.
       else neutral_info
 
-    let triangles_infos = map each_triangle rect_triangles_projected rect_surfaces
-    let (_in_triangle, _z, color) =
+    let triangles_infos = map each_triangle rect_triangles_projected (0..<rtpn)
+    let (_in_triangle, z, i) =
       reduce_comm merge_colors neutral_info triangles_infos
+    let color = if i == -1
+                then (0.0, 0.0, 0.0)
+                else let bary = barycentric_coordinates p rect_triangles_projected[i]
+                     in color_point surface_textures rect_surfaces[i] z bary
+
     in rgb_to_pixel (hsv_to_rgb color)
 
   let rect_in_rect
@@ -202,7 +207,7 @@ let render_triangles_chunked
     (pixel_indices: [bn]i32): [bn]pixel =
     let (rect_triangles_projected, rect_surfaces) =
       unzip (filter (\(t, _) -> triangle_in_rect rect t) (zip triangles_projected surfaces))
-    in map (each_pixel rect_triangles_projected rect_surfaces) pixel_indices
+    in unsafe map (each_pixel rect_triangles_projected rect_surfaces) pixel_indices
 
   let rect_pixel_indices
     (((x0, y0), (x1, y1)): rectangle): []i32 =
@@ -214,7 +219,7 @@ let render_triangles_chunked
   in if n_rects_x == 1 && n_rects_y == 1
      then -- Keep it simple.  This will be a redomap.
           let pixel_indices = iota (w * h)
-          let pixels = map (each_pixel triangles_projected surfaces) pixel_indices
+          let pixels = unsafe map (each_pixel triangles_projected surfaces) pixel_indices
           in reshape (w, h) pixels
      else -- Split into rectangles, each with their own triangles, and use scatter
           -- in the end.

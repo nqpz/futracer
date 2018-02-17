@@ -42,6 +42,7 @@ Use R to switch rendering approaches.
 For the `chunked` rendering approach, use A and D to decrease and
 increase the number of draw rectangles on the X axis, and W and S on the
 Y axis.  Sometime in the future this should be chosen automatically.
+Warning: This might slow down the program to a crawl for some reason.
 
 
 ## Scripts
