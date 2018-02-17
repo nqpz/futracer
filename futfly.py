@@ -145,20 +145,24 @@ class FutFly:
 
         for i in inf_range():
             fps = self.clock.get_fps()
-            time_start = time.time()
 
+            time_start = time.time()
             frame = self.racer.render_triangles(
                 self.size, self.view_dist, self.draw_dist, camera,
                 None, triangles_pre,
                 None, textures_pre, self.render_approach, self.n_draw_rects)
             time_end = time.time()
+            time_start_get = time.time()
             frame = frame.get()
+            time_end_get = time.time()
+
             futhark_dur_ms = (time_end - time_start) * 1000
+            futhark_get_ms = (time_end_get - time_start_get) * 1000
             pygame.surfarray.blit_array(self.surface, frame)
             self.screen.blit(self.surface, (0, 0))
 
             self.message('FPS: {:.02f}'.format(fps), (10, 10))
-            self.message('Futhark: {:.02f} ms'.format(futhark_dur_ms), (10, 40))
+            self.message('Futhark: {:.02f} ms (memory get: {:.02f} ms)'.format(futhark_dur_ms, futhark_get_ms), (10, 40))
             self.message('Draw distance: {:.02f}'.format(self.draw_dist), (10, 70))
             self.message('Rendering approach: {}'.format(self.render_approach), (10, 100))
             if self.render_approach == 'chunked':
