@@ -168,7 +168,7 @@ let render_triangles_chunked
       then (true, z0, i0) -- Just pick one of them.
       else neutral_info
 
-    let triangles_infos = map each_triangle rect_triangles_projected (0..<rtpn)
+    let triangles_infos = map2 each_triangle rect_triangles_projected (0..<rtpn)
     let (_in_triangle, z, i) =
       reduce_comm merge_colors neutral_info triangles_infos
     let color = if i == -1
@@ -206,7 +206,7 @@ let render_triangles_chunked
     (rect: rectangle)
     (pixel_indices: [bn]i32): [bn]pixel =
     let (rect_triangles_projected, rect_surfaces) =
-      unzip (filter (\(t, _) -> triangle_in_rect rect t) (zip triangles_projected surfaces))
+      unsafe unzip (filter (\(t, _) -> triangle_in_rect rect t) (zip triangles_projected surfaces))
     in unsafe map (each_pixel rect_triangles_projected rect_surfaces) pixel_indices
 
   let rect_pixel_indices
@@ -236,7 +236,7 @@ let render_triangles_chunked
           let n_pixels = n_rects_x * n_rects_y * x_size * y_size
 
           let pixel_indicess = unsafe map rect_pixel_indices rects
-          let pixelss = map each_rect rects pixel_indicess
+          let pixelss = map2 each_rect rects pixel_indicess
           let pixel_indices = reshape n_pixels pixel_indicess
           let pixels = reshape n_pixels pixelss
           let pixel_indices' = map (\i -> if i < w * h then i else -1) pixel_indices
@@ -296,14 +296,14 @@ let render_triangles_scatter_bbox
 
     let z_values_new = map (interpolate_z triangle_projected) barys_new
 
-    let colors_new = map (color_point surface_textures surface)
-                         z_values_new barys_new
+    let colors_new = map2 (color_point surface_textures surface)
+                          z_values_new barys_new
     let pixels_new = map (\x -> rgb_to_pixel (hsv_to_rgb x)) colors_new
 
     let is_insides_new = map is_inside_triangle barys_new
 
-    let colors_merged = map merge_colors indices z_values_cur
-                            pixels_new z_values_new is_insides_new
+    let colors_merged = map5 merge_colors indices z_values_cur
+                             pixels_new z_values_new is_insides_new
     let (indices_merged, pixels_merged, z_values_merged) = unzip colors_merged
 
     let pixels' = scatter pixels indices_merged pixels_merged
