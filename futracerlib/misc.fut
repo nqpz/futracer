@@ -1,7 +1,5 @@
 import "/futlib/math"
 
-default (i32, f32)
-
 module type racer_num = {
   type t
 }

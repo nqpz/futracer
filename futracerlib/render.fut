@@ -4,8 +4,6 @@ import "/futracerlib/misc"
 import "/futracerlib/color"
 import "/futracerlib/transformations"
 
-default (i32, f32)
-
 type render_approach_id = i32
 
 -- FIXME: Use records.

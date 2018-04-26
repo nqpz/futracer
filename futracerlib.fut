@@ -4,8 +4,6 @@ import "futracerlib/color"
 import "futracerlib/transformations"
 import "futracerlib/render"
 
-default (i32, f32)
-
 entry rotate_point_raw
   (angle_x: f32, angle_y: f32, angle_z: f32,
    x_origo: f32, y_origo: f32, z_origo: f32,

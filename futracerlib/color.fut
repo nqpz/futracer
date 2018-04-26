@@ -2,8 +2,6 @@ import "/futlib/math"
 
 import "/futracerlib/misc"
 
-default (i32, f32)
-
 type pixel = u32
 type pixel_channel = u32
 type rgb = (pixel_channel, pixel_channel, pixel_channel)
