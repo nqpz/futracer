@@ -60,7 +60,7 @@ entry render_triangles_raw
   let triangles = zip p0s p1s p2s
   let surface_hsvs = zip surface_hsv_hs surface_hsv_ss surface_hsv_vs
   let surfaces = zip surface_types surface_hsvs surface_indices
-  let surface_textures = reshape (surface_n, surface_h, surface_w)
+  let surface_textures = unflatten_3d surface_n surface_h surface_w
                                  (zip surface_textures_flat_hsv_hs
                                       surface_textures_flat_hsv_ss
                                       surface_textures_flat_hsv_vs)

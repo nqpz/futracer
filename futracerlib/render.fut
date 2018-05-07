@@ -212,35 +212,33 @@ let render_triangles_chunked
     let (xlen, ylen) = (x1 - x0, y1 - y0)
     let xs = map (+ x0) (iota xlen)
     let ys = map (+ y0) (iota ylen)
-    in reshape (xlen * ylen) (map (\x -> map (\y -> x * h + y) ys) xs)
+    in flatten (map (\x -> map (\y -> x * h + y) ys) xs)
 
   in if n_rects_x == 1 && n_rects_y == 1
      then -- Keep it simple.  This will be a redomap.
           let pixel_indices = iota (w * h)
           let pixels = unsafe map (each_pixel triangles_projected surfaces) pixel_indices
-          in reshape (w, h) pixels
+          in unflatten w h pixels
      else -- Split into rectangles, each with their own triangles, and use scatter
           -- in the end.
           let x_size = w / n_rects_x + i32.bool (w % n_rects_x > 0)
           let y_size = h / n_rects_y + i32.bool (h % n_rects_y > 0)
-          let rects = reshape (n_rects_x * n_rects_y)
-                              (map (\x -> map (\y ->
+          let rects = flatten (map (\x -> map (\y ->
                                                let x0 = x * x_size
                                                let y0 = y * y_size
                                                let x1 = x0 + x_size
                                                let y1 = y0 + y_size
                                                in ((x0, y0), (x1, y1)))
                                     (iota n_rects_y)) (iota n_rects_x))
-          let n_pixels = n_rects_x * n_rects_y * x_size * y_size
 
           let pixel_indicess = unsafe map rect_pixel_indices rects
           let pixelss = map2 each_rect rects pixel_indicess
-          let pixel_indices = reshape n_pixels pixel_indicess
-          let pixels = reshape n_pixels pixelss
+          let pixel_indices = flatten pixel_indicess
+          let pixels = flatten pixelss
           let pixel_indices' = map (\i -> if i < w * h then i else -1) pixel_indices
           let frame = replicate (w * h) 0u32
           let frame' = scatter frame pixel_indices' pixels
-          in reshape (w, h) frame'
+          in unflatten w h frame'
 
 let render_triangles_scatter_bbox
   [tn][texture_w][texture_h]
@@ -280,8 +278,7 @@ let render_triangles_scatter_bbox
       bounding_box triangle_projected
     let x_span = x_right - x_left + 1
     let y_span = y_bottom - y_top + 1
-    let coordinates = reshape (x_span * y_span)
-                              (map (\x -> map (\y -> (x, y))
+    let coordinates = flatten (map (\x -> map (\y -> (x, y))
                                               (map (+ y_top) (iota y_span)))
                                    (map (+ x_left) (iota x_span)))
     let indices = map (\(x, y) -> x * h + y) coordinates
@@ -307,7 +304,7 @@ let render_triangles_scatter_bbox
     let pixels' = scatter pixels indices_merged pixels_merged
     let z_values' = scatter z_values indices_merged z_values_merged
     in (pixels', z_values')
-  let frame' = reshape (w, h) pixels
+  let frame' = unflatten w h pixels
   in frame'
 
 let render_triangles_in_view
