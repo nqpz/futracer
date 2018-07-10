@@ -1,8 +1,8 @@
 import "/futlib/math"
 
-import "/futracerlib/misc"
-import "/futracerlib/color"
-import "/futracerlib/transformations"
+import "misc"
+import "color"
+import "transformations"
 
 type render_approach_id = i32
 
@@ -299,7 +299,7 @@ let render_triangles_scatter_bbox
 
     let colors_merged = map5 merge_colors indices z_values_cur
                              pixels_new z_values_new is_insides_new
-    let (indices_merged, pixels_merged, z_values_merged) = unzip colors_merged
+    let (indices_merged, pixels_merged, z_values_merged) = unzip3 colors_merged
 
     let pixels' = scatter pixels indices_merged pixels_merged
     let z_values' = scatter z_values indices_merged z_values_merged

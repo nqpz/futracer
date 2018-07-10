@@ -1,6 +1,6 @@
 import "/futlib/math"
 
-import "/futracerlib/misc"
+import "misc"
 
 type pixel = u32
 type pixel_channel = u32

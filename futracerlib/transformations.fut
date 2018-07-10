@@ -1,6 +1,6 @@
 import "/futlib/math"
 
-import "/futracerlib/misc"
+import "misc"
 
 let rotate_point
   ((angle_x, angle_y, angle_z): f32racer.angles)

@@ -54,14 +54,14 @@ entry render_triangles_raw
   ): [w][h]pixel =
   let n_draw_rects = (n_draw_rects_x, n_draw_rects_y)
   let camera = ((c_x, c_y, c_z), (c_ax, c_ay, c_az))
-  let p0s = zip x0s y0s z0s
-  let p1s = zip x1s y1s z1s
-  let p2s = zip x2s y2s z2s
-  let triangles = zip p0s p1s p2s
-  let surface_hsvs = zip surface_hsv_hs surface_hsv_ss surface_hsv_vs
-  let surfaces = zip surface_types surface_hsvs surface_indices
+  let p0s = zip3 x0s y0s z0s
+  let p1s = zip3 x1s y1s z1s
+  let p2s = zip3 x2s y2s z2s
+  let triangles = zip3 p0s p1s p2s
+  let surface_hsvs = zip3 surface_hsv_hs surface_hsv_ss surface_hsv_vs
+  let surfaces = zip3 surface_types surface_hsvs surface_indices
   let surface_textures = unflatten_3d surface_n surface_h surface_w
-                                 (zip surface_textures_flat_hsv_hs
+                                 (zip3 surface_textures_flat_hsv_hs
                                       surface_textures_flat_hsv_ss
                                       surface_textures_flat_hsv_vs)
   let triangles_with_surfaces = zip triangles surfaces
