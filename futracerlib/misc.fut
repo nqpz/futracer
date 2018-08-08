@@ -1,5 +1,3 @@
-import "/futlib/math"
-
 module type racer_num = {
   type t
 }

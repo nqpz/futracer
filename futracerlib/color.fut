@@ -1,5 +1,3 @@
-import "/futlib/math"
-
 import "misc"
 
 type pixel = u32

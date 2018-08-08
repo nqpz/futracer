@@ -1,5 +1,3 @@
-import "/futlib/math"
-
 import "misc"
 import "color"
 import "transformations"

@@ -1,5 +1,3 @@
-import "/futlib/math"
-
 import "misc"
 
 let rotate_point
