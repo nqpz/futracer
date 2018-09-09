@@ -5,53 +5,51 @@ import "futracerlib/transformations"
 import "futracerlib/render"
 
 entry rotate_point_raw
-  (angle_x: f32, angle_y: f32, angle_z: f32,
-   x_origo: f32, y_origo: f32, z_origo: f32,
-   x: f32, y: f32, z: f32): (f32, f32, f32) =
+  (angle_x: f32) (angle_y: f32) (angle_z: f32)
+  (x_origo: f32) (y_origo: f32) (z_origo: f32)
+  (x: f32) (y: f32) (z: f32): (f32, f32, f32) =
   rotate_point (angle_x, angle_y, angle_z) (x_origo, y_origo, z_origo) (x, y, z)
 
 entry translate_point_raw
-  (x_move: f32, y_move: f32, z_move: f32,
-   x: f32, y: f32, z: f32): (f32, f32, f32) =
+  (x_move: f32) (y_move: f32) (z_move: f32)
+  (x: f32) (y: f32) (z: f32): (f32, f32, f32) =
   translate_point (x_move, y_move, z_move) (x, y, z)
 
 entry render_triangles_raw
   [n]
-  (
-   render_approach: render_approach_id,
-   n_draw_rects_x: i32,
-   n_draw_rects_y: i32,
-   w: i32,
-   h: i32,
-   view_dist: f32,
-   draw_dist: f32,
-   x0s: [n]f32,
-   y0s: [n]f32,
-   z0s: [n]f32,
-   x1s: [n]f32,
-   y1s: [n]f32,
-   z1s: [n]f32,
-   x2s: [n]f32,
-   y2s: [n]f32,
-   z2s: [n]f32,
-   surface_types: [n]surface_type,
-   surface_hsv_hs: [n]f32,
-   surface_hsv_ss: [n]f32,
-   surface_hsv_vs: [n]f32,
-   surface_indices: [n]i32,
-   surface_n: i32,
-   surface_w: i32,
-   surface_h: i32,
-   surface_textures_flat_hsv_hs: []f32,
-   surface_textures_flat_hsv_ss: []f32,
-   surface_textures_flat_hsv_vs: []f32,
-   c_x: f32,
-   c_y: f32,
-   c_z: f32,
-   c_ax: f32,
-   c_ay: f32,
-   c_az: f32
-  ): [w][h]pixel =
+  (render_approach: render_approach_id)
+  (n_draw_rects_x: i32)
+  (n_draw_rects_y: i32)
+  (w: i32)
+  (h: i32)
+  (view_dist: f32)
+  (draw_dist: f32)
+  (x0s: [n]f32)
+  (y0s: [n]f32)
+  (z0s: [n]f32)
+  (x1s: [n]f32)
+  (y1s: [n]f32)
+  (z1s: [n]f32)
+  (x2s: [n]f32)
+  (y2s: [n]f32)
+  (z2s: [n]f32)
+  (surface_types: [n]surface_type)
+  (surface_hsv_hs: [n]f32)
+  (surface_hsv_ss: [n]f32)
+  (surface_hsv_vs: [n]f32)
+  (surface_indices: [n]i32)
+  (surface_n: i32)
+  (surface_w: i32)
+  (surface_h: i32)
+  (surface_textures_flat_hsv_hs: []f32)
+  (surface_textures_flat_hsv_ss: []f32)
+  (surface_textures_flat_hsv_vs: []f32)
+  (c_x: f32)
+  (c_y: f32)
+  (c_z: f32)
+  (c_ax: f32)
+  (c_ay: f32)
+  (c_az: f32): [w][h]pixel =
   let n_draw_rects = (n_draw_rects_x, n_draw_rects_y)
   let camera = ((c_x, c_y, c_z), (c_ax, c_ay, c_az))
   let p0s = zip3 x0s y0s z0s
