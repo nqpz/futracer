@@ -238,6 +238,15 @@ let render_triangles_chunked
           let frame' = scatter frame pixel_indices' pixels
           in unflatten w h frame'
 
+let bounding_box
+  (w: i32) (h: i32)
+  (((x0, y0, _z0), (x1, y1, _z1), (x2, y2, _z2)): triangle_projected)
+  : rectangle =
+  ((within_bounds 0i32 (w - 1) (i32.min (i32.min x0 x1) x2),
+    within_bounds 0i32 (h - 1) (i32.min (i32.min y0 y1) y2)),
+   (within_bounds 0i32 (w - 1) (i32.max (i32.max x0 x1) x2),
+    within_bounds 0i32 (h - 1) (i32.max (i32.max y0 y1) y2)))
+
 let render_triangles_scatter_bbox
   [tn][texture_w][texture_h]
   (triangles_projected: [tn]triangle_projected)
@@ -245,13 +254,6 @@ let render_triangles_scatter_bbox
   (surface_textures: [][texture_h][texture_w]hsv)
   (w: i32) (h: i32)
   : [w][h]pixel =
-  let bounding_box
-    (((x0, y0, _z0), (x1, y1, _z1), (x2, y2, _z2)): triangle_projected)
-    : rectangle =
-    ((within_bounds 0i32 (w - 1) (i32.min (i32.min x0 x1) x2),
-      within_bounds 0i32 (h - 1) (i32.min (i32.min y0 y1) y2)),
-     (within_bounds 0i32 (w - 1) (i32.max (i32.max x0 x1) x2),
-      within_bounds 0i32 (h - 1) (i32.max (i32.max y0 y1) y2)))
 
   let merge_colors
     (i: i32)
@@ -273,7 +275,7 @@ let render_triangles_scatter_bbox
     let surface = surfaces[i]
 
     let ((x_left, y_top), (x_right, y_bottom)) =
-      bounding_box triangle_projected
+      bounding_box w h triangle_projected
     let x_span = x_right - x_left + 1
     let y_span = y_bottom - y_top + 1
     let coordinates = flatten (map (\x -> map (\y -> (x, y))
@@ -304,6 +306,71 @@ let render_triangles_scatter_bbox
     in (pixels', z_values')
   let frame' = unflatten w h pixels
   in frame'
+
+type red_by_ind_struct = {enabled: bool,
+                          triangle: triangle_projected,
+                          surface: surface,
+                          z_depth: f32}
+
+let render_triangles_reduce_by_index
+  [tn][texture_w][texture_h]
+  (triangles_projected: [tn]triangle_projected)
+  (surfaces: [tn]surface)
+  (surface_textures: [][texture_h][texture_w]hsv)
+  (w: i32) (h: i32)
+  : [w][h]pixel =
+
+  let ms = map (\t ->
+               let ((x_left, y_top), (x_right, y_bottom)) =
+                 bounding_box w h t
+               let x_span = x_right - x_left + 1
+               let y_span = y_bottom - y_top + 1
+               in x_span * y_span) triangles_projected
+  let m = reduce i32.max 0 ms
+
+  let ne: red_by_ind_struct = {enabled=false,
+                               triangle=((0, 0, 0), (0, 0, 0), (0, 0, 0)),
+                               surface=(0, (0, 0, 0), 0),
+                               z_depth=0}
+  let f (t: red_by_ind_struct) (u: red_by_ind_struct): red_by_ind_struct =
+    if !t.enabled || t.z_depth > u.z_depth
+    then u
+    else t
+
+  let work (t: triangle_projected) (s: surface): [m](i32, red_by_ind_struct) =
+    let ((x_left, y_top), (x_right, y_bottom)) =
+      bounding_box w h t
+    let x_span = x_right - x_left + 1
+    let y_span = y_bottom - y_top + 1
+    let coordinates = flatten (map (\x -> map (\y -> (x, y))
+                                    (map (+ y_top) (unsafe (iota y_span))))
+                               (map (+ x_left) (unsafe (iota x_span))))
+    let indices = map (\(x, y) -> x * h + y) coordinates
+    let structs = map (\p ->
+                       let bary = barycentric_coordinates p t
+                       let in_triangle = is_inside_triangle bary
+                       let z = interpolate_z t bary
+                       in {enabled=in_triangle,
+                           triangle=t,
+                           surface=s,
+                           z_depth=z}
+                      ) coordinates
+    let rem = m - x_span * y_span
+    in zip (concat indices (unsafe (replicate rem (-1)))) (concat structs (unsafe (replicate rem ne)))
+
+  let (struct_indices, structs) = unzip (flatten (unsafe (map2 work triangles_projected surfaces)))
+--  let structs_screen = reduce_by_index (replicate (w * h) ne) f ne struct_indices structs
+  let structs_screen = scatter (replicate (w * h) ne) struct_indices structs
+
+  let struct_to_pixel (pixel_index: i32) (s: red_by_ind_struct): pixel =
+    if !s.enabled
+    then 0
+    else let p = (pixel_index / h, pixel_index % h)
+         let bary = barycentric_coordinates p s.triangle
+         in rgb_to_pixel (hsv_to_rgb (color_point surface_textures s.surface s.z_depth bary))
+
+  let pixels = map2 struct_to_pixel (0..<w * h) structs_screen
+  in unflatten w h pixels
 
 let render_triangles_in_view
   [texture_h][texture_w]
@@ -341,8 +408,10 @@ let render_triangles_in_view
   let (triangles_projected', surfaces') = unzip triangles_close
 
   in if render_approach == 1
-     then render_triangles_chunked triangles_projected' surfaces'
-                                   surface_textures w h n_draw_rects
+     then render_triangles_reduce_by_index triangles_projected' surfaces'
+                                           surface_textures w h
+     -- then render_triangles_chunked triangles_projected' surfaces'
+     --                               surface_textures w h n_draw_rects
      else if render_approach == 2
      then render_triangles_scatter_bbox triangles_projected' surfaces' surface_textures w h
      else replicate w (replicate h 0u32) -- error
