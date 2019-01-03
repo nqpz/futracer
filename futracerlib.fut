@@ -1,5 +1,3 @@
-import "/futlib/math"
-
 import "futracerlib/color"
 import "futracerlib/transformations"
 import "futracerlib/render"
