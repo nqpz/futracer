@@ -57,9 +57,9 @@ entry render_triangles_raw
   let surface_hsvs = zip3 surface_hsv_hs surface_hsv_ss surface_hsv_vs
   let surfaces = zip3 surface_types surface_hsvs surface_indices
   let surface_textures = unflatten_3d surface_n surface_h surface_w
-                                 (zip3 surface_textures_flat_hsv_hs
-                                      surface_textures_flat_hsv_ss
-                                      surface_textures_flat_hsv_vs)
+                                      (zip3 surface_textures_flat_hsv_hs
+                                            surface_textures_flat_hsv_ss
+                                            surface_textures_flat_hsv_vs)
   let triangles_with_surfaces = zip triangles surfaces
   in render_triangles_in_view render_approach n_draw_rects
                               camera triangles_with_surfaces
