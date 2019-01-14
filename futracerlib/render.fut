@@ -213,30 +213,32 @@ let render_triangles_chunked
     in flatten (map (\x -> map (\y -> x * h + y) ys) xs)
 
   in if n_rects_x == 1 && n_rects_y == 1
-     then -- Keep it simple.  This will be a redomap.
-          let pixel_indices = iota (w * h)
-          let pixels = unsafe map (each_pixel triangles_projected surfaces) pixel_indices
-          in unflatten w h pixels
-     else -- Split into rectangles, each with their own triangles, and use scatter
-          -- in the end.
-          let x_size = w / n_rects_x + i32.bool (w % n_rects_x > 0)
-          let y_size = h / n_rects_y + i32.bool (h % n_rects_y > 0)
-          let rects = flatten (map (\x -> map (\y ->
-                                               let x0 = x * x_size
-                                               let y0 = y * y_size
-                                               let x1 = x0 + x_size
-                                               let y1 = y0 + y_size
-                                               in ((x0, y0), (x1, y1)))
-                                    (iota n_rects_y)) (iota n_rects_x))
+     then
+     -- Keep it simple.  This will be a redomap.
+     let pixel_indices = iota (w * h)
+     let pixels = unsafe map (each_pixel triangles_projected surfaces) pixel_indices
+     in unflatten w h pixels
+     else
+     -- Split into rectangles, each with their own triangles, and use scatter in
+     -- the end.
+     let x_size = w / n_rects_x + i32.bool (w % n_rects_x > 0)
+     let y_size = h / n_rects_y + i32.bool (h % n_rects_y > 0)
+     let rects = flatten (map (\x -> map (\y ->
+                                            let x0 = x * x_size
+                                            let y0 = y * y_size
+                                            let x1 = x0 + x_size
+                                            let y1 = y0 + y_size
+                                            in ((x0, y0), (x1, y1)))
+                                         (iota n_rects_y)) (iota n_rects_x))
 
-          let pixel_indicess = unsafe map rect_pixel_indices rects
-          let pixelss = map2 each_rect rects pixel_indicess
-          let pixel_indices = flatten pixel_indicess
-          let pixels = flatten pixelss
-          let pixel_indices' = map (\i -> if i < w * h then i else -1) pixel_indices
-          let frame = replicate (w * h) 0u32
-          let frame' = scatter frame pixel_indices' pixels
-          in unflatten w h frame'
+     let pixel_indicess = unsafe map rect_pixel_indices rects
+     let pixelss = map2 each_rect rects pixel_indicess
+     let pixel_indices = flatten pixel_indicess
+     let pixels = flatten pixelss
+     let pixel_indices' = map (\i -> if i < w * h then i else -1) pixel_indices
+     let frame = replicate (w * h) 0u32
+     let frame' = scatter frame pixel_indices' pixels
+     in unflatten w h frame'
 
 let render_triangles_scatter_bbox
   [tn][texture_w][texture_h]
