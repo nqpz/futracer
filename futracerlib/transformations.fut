@@ -1,15 +1,15 @@
 import "misc"
 
 let rotate_point
-  ((angle_x, angle_y, angle_z): f32racer.angles)
-  ((x_origo, y_origo, z_origo): f32racer.point3D)
-  ((x, y, z): f32racer.point3D)
+  (angle: f32racer.angles)
+  (origo: f32racer.point3D)
+  (p: f32racer.point3D)
   : f32racer.point3D =
-  let (x0, y0, z0) = (x - x_origo, y - y_origo, z - z_origo)
+  let (x0, y0, z0) = (p.x - origo.x, p.y - origo.y, p.z - origo.z)
 
-  let (sin_x, cos_x) = (f32.sin angle_x, f32.cos angle_x)
-  let (sin_y, cos_y) = (f32.sin angle_y, f32.cos angle_y)
-  let (sin_z, cos_z) = (f32.sin angle_z, f32.cos angle_z)
+  let (sin_x, cos_x) = (f32.sin angle.x, f32.cos angle.x)
+  let (sin_y, cos_y) = (f32.sin angle.y, f32.cos angle.y)
+  let (sin_z, cos_z) = (f32.sin angle.z, f32.cos angle.z)
 
   -- X axis.
   let (x1, y1, z1) = (x0,
@@ -24,11 +24,11 @@ let rotate_point
                       x2 * sin_z + y2 * cos_z,
                       z2)
 
-  let (x', y', z') = (x_origo + x3, y_origo + y3, z_origo + z3)
-  in (x', y', z')
+  let (x', y', z') = (origo.x + x3, origo.y + y3, origo.z + z3)
+  in {x=x', y=y', z=z'}
 
 let translate_point
-  ((x_move, y_move, z_move): f32racer.point3D)
-  ((x, y, z): f32racer.point3D)
+  (move: f32racer.point3D)
+  (p: f32racer.point3D)
   : f32racer.point3D =
-  (x + x_move, y + y_move, z + z_move)
+  {x=p.x + move.x, y=p.y + move.y, z=p.z + move.z}

@@ -6,7 +6,7 @@ type render_approach_id = i32
 
 -- FIXME: Use records.
 type triangle = (f32racer.point3D, f32racer.point3D, f32racer.point3D)
-type point_projected = (i32, i32, f32)
+type point_projected = {x: i32, y: i32, z: f32}
 type triangle_projected = (point_projected, point_projected, point_projected)
 type point_barycentric = (i32, i32racer.point3D, f32racer.point3D)
 type camera = (f32racer.point3D, f32racer.angles)
@@ -23,12 +23,12 @@ type surface_double_texture = [][]hsv
 type triangle_with_surface = (triangle, surface)
 
 let normalize_triangle
-  (((xc, yc, zc), (ax, ay, az)): camera)
+  ((c, a): camera)
   ((p0, p1, p2): triangle)
   : triangle =
   let normalize_point (pa: f32racer.point3D): f32racer.point3D =
-    let pb = translate_point (-xc, -yc, -zc) pa
-    let pc = rotate_point (-ax, -ay, -az) (0.0, 0.0, 0.0) pb
+    let pb = translate_point {x= -c.x, y= -c.y, z= -c.z} pa
+    let pc = rotate_point {x= -a.x, y= -a.y, z= -a.z} {x=0.0, y=0.0, z=0.0} pb
     in pc
 
   in (normalize_point p0,
@@ -42,26 +42,26 @@ let project_triangle
   : triangle_projected =
 
   let project_point
-    ((x, y, z): f32racer.point3D)
+    ({x, y, z}: f32racer.point3D)
     : i32racer.point2D =
     let z_ratio = if z >= 0.0
                   then (view_dist + z) / view_dist
                   else 1.0 / ((view_dist - z) / view_dist)
     let x_projected = x / z_ratio + r32 w / 2.0
     let y_projected = y / z_ratio + r32 h / 2.0
-    in (t32 x_projected, t32 y_projected)
+    in {x=t32 x_projected, y=t32 y_projected}
 
-  let ((x0, y0, z0), (x1, y1, z1), (x2, y2, z2)) = triangle
-  let (xp0, yp0) = project_point (x0, y0, z0)
-  let (xp1, yp1) = project_point (x1, y1, z1)
-  let (xp2, yp2) = project_point (x2, y2, z2)
-  in ((xp0, yp0, z0), (xp1, yp1, z1), (xp2, yp2, z2))
+  let ({x=x0, y=y0, z=z0}, {x=x1, y=y1, z=z1}, {x=x2, y=y2, z=z2}) = triangle
+  let {x=xp0, y=yp0} = project_point {x=x0, y=y0, z=z0}
+  let {x=xp1, y=yp1} = project_point {x=x1, y=y1, z=z1}
+  let {x=xp2, y=yp2} = project_point {x=x2, y=y2, z=z2}
+  in ({x=xp0, y=yp0, z=z0}, {x=xp1, y=yp1, z=z1}, {x=xp2, y=yp2, z=z2})
 
 let barycentric_coordinates
-  ((x, y): i32racer.point2D)
+  ({x, y}: i32racer.point2D)
   (triangle: triangle_projected)
   : point_barycentric =
-  let ((xp0, yp0, _z0), (xp1, yp1, _z1), (xp2, yp2, _z2)) = triangle
+  let ({x=xp0, y=yp0, z=_}, {x=xp1, y=yp1, z=_}, {x=xp2, y=yp2, z=_}) = triangle
   let factor = (yp1 - yp2) * (xp0 - xp2) + (xp2 - xp1) * (yp0 - yp2)
   in if factor != 0 -- Avoid division by zero.
      then let a = ((yp1 - yp2) * (x - xp2) + (xp2 - xp1) * (y - yp2))
@@ -71,19 +71,19 @@ let barycentric_coordinates
           let an = r32 a / factor'
           let bn = r32 b / factor'
           let cn = 1.0 - an - bn
-          in (factor, (a, b, c), (an, bn, cn))
-     else (1, (-1, -1, -1), (-1.0, -1.0, -1.0)) -- Don't draw.
+          in (factor, {x=a, y=b, z=c}, {x=an, y=bn, z=cn})
+     else (1, {x= -1, y= -1, z= -1}, {x= -1.0, y= -1.0, z= -1.0}) -- Don't draw.
 
 let is_inside_triangle
-  ((factor, (a, b, c), (_an, _bn, _cn)): point_barycentric)
+  ((factor, {x=a, y=b, z=c}, _): point_barycentric)
   : bool =
   in_range a 0 factor && in_range b 0 factor && in_range c 0 factor
 
 let interpolate_z
   (triangle: triangle_projected)
-  ((_factor, (_a, _b, _c), (an, bn, cn)): point_barycentric)
+  ((_factor, _, {x=an, y=bn, z=cn}): point_barycentric)
   : f32 =
-  let ((_xp0, _yp0, z0), (_xp1, _yp1, z1), (_xp2, _yp2, z2)) = triangle
+  let ({x=_, y=_, z=z0}, {x=_, y=_, z=z1}, {x=_, y=_, z=z2}) = triangle
   in an * z0 + bn * z1 + cn * z2
 
 let color_point
@@ -111,7 +111,7 @@ let color_point
          -- FIXME: This results in a slightly distorted image, as it is based on
          -- the projected triangle, not the actual triangle.  This is fine for
          -- small triangles, but noticable for large triangles.
-         let (an, bn, cn) = bary.3
+         let {x=an, y=bn, z=cn} = bary.3
          let yn = an * yn0 + bn * yn1 + cn * yn2
          let xn = an * xn0 + bn * xn1 + cn * xn2
          let yi = t32 (yn * r32 texture_h)
@@ -138,7 +138,7 @@ let render_triangles_chunked
     (rect_triangles_projected: [rtpn]triangle_projected)
     (rect_surfaces: []surface)
     (pixel_index: i32): pixel =
-    let p = (pixel_index / h, pixel_index % h)
+    let p = {x=pixel_index / h, y=pixel_index % h}
     let each_triangle
       (t: triangle_projected)
       (i: i32)
@@ -175,18 +175,18 @@ let render_triangles_chunked
     in rgb_to_pixel (hsv_to_rgb color)
 
   let rect_in_rect
-    (((x0a, y0a), (x1a, y1a)): rectangle)
-    (((x0b, y0b), (x1b, y1b)): rectangle): bool =
+    (({x=x0a, y=y0a}, {x=x1a, y=y1a}): rectangle)
+    (({x=x0b, y=y0b}, {x=x1b, y=y1b}): rectangle): bool =
     ! (x1a <= x0b || x0a >= x1b || y1a <= y0b || y0a >= y1b)
 
   let bounding_box
-    (((x0, y0, _z0),
-      (x1, y1, _z1),
-      (x2, y2, _z2)): triangle_projected): rectangle =
-    (((i32.min (i32.min x0 x1) x2),
-      (i32.min (i32.min y0 y1) y2)),
-     ((i32.max (i32.max x0 x1) x2),
-      (i32.max (i32.max y0 y1) y2)))
+    (({x=x0, y=y0, z=_},
+      {x=x1, y=y1, z=_},
+      {x=x2, y=y2, z=_}): triangle_projected): rectangle =
+    ({x=i32.min (i32.min x0 x1) x2,
+      y=i32.min (i32.min y0 y1) y2},
+     {x=i32.max (i32.max x0 x1) x2,
+      y=i32.max (i32.max y0 y1) y2})
 
   -- Does a triangle intersect with a rectangle?  FIXME: This might produce
   -- false positives (which is not a problem for the renderer, but could be more
@@ -206,7 +206,7 @@ let render_triangles_chunked
     in unsafe map (each_pixel rect_triangles_projected rect_surfaces) pixel_indices
 
   let rect_pixel_indices
-    (((x0, y0), (x1, y1)): rectangle): []i32 =
+    (({x=x0, y=y0}, {x=x1, y=y1}): rectangle): []i32 =
     let (xlen, ylen) = (x1 - x0, y1 - y0)
     let xs = map (+ x0) (iota xlen)
     let ys = map (+ y0) (iota ylen)
@@ -228,7 +228,7 @@ let render_triangles_chunked
                                             let y0 = y * y_size
                                             let x1 = x0 + x_size
                                             let y1 = y0 + y_size
-                                            in ((x0, y0), (x1, y1)))
+                                            in ({x=x0, y=y0}, {x=x1, y=y1}))
                                          (iota n_rects_y)) (iota n_rects_x))
 
      let pixel_indicess = unsafe map rect_pixel_indices rects
@@ -248,12 +248,12 @@ let render_triangles_scatter_bbox
   (w: i32) (h: i32)
   : [w][h]pixel =
   let bounding_box
-    (((x0, y0, _z0), (x1, y1, _z1), (x2, y2, _z2)): triangle_projected)
+    (({x=x0, y=y0, z=_z0}, {x=x1, y=y1, z=_z1}, {x=x2, y=y2, z=_z2}): triangle_projected)
     : rectangle =
-    ((within_bounds 0i32 (w - 1) (i32.min (i32.min x0 x1) x2),
-      within_bounds 0i32 (h - 1) (i32.min (i32.min y0 y1) y2)),
-     (within_bounds 0i32 (w - 1) (i32.max (i32.max x0 x1) x2),
-      within_bounds 0i32 (h - 1) (i32.max (i32.max y0 y1) y2)))
+    ({x=within_bounds 0i32 (w - 1) (i32.min (i32.min x0 x1) x2),
+      y=within_bounds 0i32 (h - 1) (i32.min (i32.min y0 y1) y2)},
+     {x=within_bounds 0i32 (w - 1) (i32.max (i32.max x0 x1) x2),
+      y=within_bounds 0i32 (h - 1) (i32.max (i32.max y0 y1) y2)})
 
   let merge_colors
     (i: i32)
@@ -274,14 +274,14 @@ let render_triangles_scatter_bbox
     let triangle_projected = triangles_projected[i]
     let surface = surfaces[i]
 
-    let ((x_left, y_top), (x_right, y_bottom)) =
+    let ({x=x_left, y=y_top}, {x=x_right, y=y_bottom}) =
       bounding_box triangle_projected
     let x_span = x_right - x_left + 1
     let y_span = y_bottom - y_top + 1
-    let coordinates = flatten (map (\x -> map (\y -> (x, y))
+    let coordinates = flatten (map (\x -> map (\y -> {x, y})
                                               (map (+ y_top) (iota y_span)))
                                    (map (+ x_left) (iota x_span)))
-    let indices = map (\(x, y) -> x * h + y) coordinates
+    let indices = map (\{x, y} -> x * h + y) coordinates
 
     let z_values_cur = map (\i -> unsafe z_values[i]) indices
 
@@ -324,11 +324,11 @@ let render_triangles_in_view
   let triangles_projected = map (project_triangle w h view_dist)
                                 triangles_normalized
 
-  let close_enough_dist ((_x, _y, z): point_projected): bool =
+  let close_enough_dist ({x=_, y=_, z}: point_projected): bool =
     0.0 <= z && z < draw_dist
 
   let close_enough_fully_out_of_frame
-    (((x0, y0, _z0), (x1, y1, _z1), (x2, y2, _z2)): triangle_projected): bool =
+    (({x=x0, y=y0, z=_z0}, {x=x1, y=y1, z=_z1}, {x=x2, y=y2, z=_z2}): triangle_projected): bool =
     (x0 < 0 && x1 < 0 && x2 < 0) || (x0 >= w && x1 >= w && x2 >= w) ||
     (y0 < 0 && y1 < 0 && y2 < 0) || (y0 >= h && y1 >= h && y2 >= h)
 

@@ -6,12 +6,17 @@ entry rotate_point_raw
   (angle_x: f32) (angle_y: f32) (angle_z: f32)
   (x_origo: f32) (y_origo: f32) (z_origo: f32)
   (x: f32) (y: f32) (z: f32): (f32, f32, f32) =
-  rotate_point (angle_x, angle_y, angle_z) (x_origo, y_origo, z_origo) (x, y, z)
+  let {x, y, z} = rotate_point {x=angle_x, y=angle_y, z=angle_z}
+                               {x=x_origo, y=y_origo, z=z_origo}
+                               {x=x, y=y, z=z}
+  in (x, y, z)
 
 entry translate_point_raw
   (x_move: f32) (y_move: f32) (z_move: f32)
   (x: f32) (y: f32) (z: f32): (f32, f32, f32) =
-  translate_point (x_move, y_move, z_move) (x, y, z)
+  let {x, y, z} = translate_point {x=x_move, y=y_move, z=z_move}
+                                  {x=x, y=y, z=z}
+  in (x, y, z)
 
 entry render_triangles_raw
   [n]
@@ -49,10 +54,10 @@ entry render_triangles_raw
   (c_ay: f32)
   (c_az: f32): [w][h]pixel =
   let n_draw_rects = (n_draw_rects_x, n_draw_rects_y)
-  let camera = ((c_x, c_y, c_z), (c_ax, c_ay, c_az))
-  let p0s = zip3 x0s y0s z0s
-  let p1s = zip3 x1s y1s z1s
-  let p2s = zip3 x2s y2s z2s
+  let camera = ({x=c_x, y=c_y, z=c_z}, {x=c_ax, y=c_ay, z=c_az})
+  let p0s = map3 (\x y z -> {x=x, y=y, z=z}) x0s y0s z0s
+  let p1s = map3 (\x y z -> {x=x, y=y, z=z}) x1s y1s z1s
+  let p2s = map3 (\x y z -> {x=x, y=y, z=z}) x2s y2s z2s
   let triangles = zip3 p0s p1s p2s
   let surface_hsvs = zip3 surface_hsv_hs surface_hsv_ss surface_hsv_vs
   let surfaces = zip3 surface_types surface_hsvs surface_indices

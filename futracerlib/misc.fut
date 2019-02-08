@@ -5,9 +5,9 @@ module type racer_num = {
 module racer (num: racer_num) = {
   type t = num.t
 
-  type point2D = (t, t)
-  type point3D = (t, t, t)
-  type angles = (t, t, t)
+  type point2D = {x: t, y: t}
+  type point3D = {x: t, y: t, z: t}
+  type angles = {x: t, y: t, z: t}
 }
 
 module f32racer = racer {
