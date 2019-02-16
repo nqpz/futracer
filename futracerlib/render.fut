@@ -1,26 +1,8 @@
 import "misc"
 import "color"
 import "transformations"
-
-type render_approach_id = i32
-
--- FIXME: Use records.
-type triangle = (f32racer.point3D, f32racer.point3D, f32racer.point3D)
-type point_projected = {x: i32, y: i32, z: f32}
-type triangle_projected = (point_projected, point_projected, point_projected)
-type point_barycentric = (i32, i32racer.point3D, f32racer.point3D)
-type camera = (f32racer.point3D, f32racer.angles)
-type rectangle = (i32racer.point2D, i32racer.point2D)
-
--- If surface_type == 1, use the color in #1 surface.
--- If surface_type == 2, use the surface from the index in #2 surface.
-type surface_type = i32
-type surface = (surface_type, hsv, i32)
--- A double texture contains two textures: one in the upper left triangle, and
--- one (backwards) in the lower right triangle.  Use `texture_index / 2` to
--- refer to the correct double texture.
-type surface_double_texture = [][]hsv
-type triangle_with_surface = (triangle, surface)
+import "render_types"
+import "build_triangles"
 
 let normalize_triangle
   ((c, a): camera)
@@ -120,7 +102,7 @@ let color_point
          let xi' = clamp xi 0 (texture_w - 1)
          in unsafe double_tex[yi', xi']
     else (0.0, 0.0, 0.0) -- unsupported input
-  let flashlight_brightness = 2.0 * 10.0**5.0
+  let flashlight_brightness = 2.0 * 10.0**6.0
   let v_factor = f32.min 1.0 (flashlight_brightness
                               / (z ** 2.0))
   in (h, s, v * v_factor)
@@ -307,6 +289,59 @@ let render_triangles_scatter_bbox
   let frame' = unflatten w h pixels
   in frame'
 
+let encode_loc_and_ix (loc: i32) (ix: i32): i64 =
+  (i64.i32 loc << 32) | i64.i32 ix
+
+let decode_loc_and_ix (code: i64): (i32, i32) =
+  (i32.i64 (code >> 32), i32.i64 code)
+
+let render_triangles_segmented
+  [tn][texture_w][texture_h]
+  (triangles_projected: [tn]triangle_projected)
+  (surfaces: [tn]surface)
+  (surface_textures: [][texture_h][texture_w]hsv)
+  (w: i32) (h: i32)
+  : [w][h]pixel =
+  let lines = lines_of_triangles triangles_projected
+  let points = points_of_lines lines
+  let points' = filter (\({x, y}, _) -> x >= 0 && x < w && y >=0 && y < h) points
+  let indices = map (\({x, y}, _) -> x * h + y) points'
+  let points'' = map (\({x, y}, ix) -> encode_loc_and_ix (x * h + y) ix) points'
+  let empty_code = encode_loc_and_ix (-1) (-1)
+
+  let update (code_a: i64) (code_b: i64): i64 =
+    let ((loca, ia), (locb, ib)) = (decode_loc_and_ix code_a,
+                                    decode_loc_and_ix code_b)
+    in if ia == -1
+       then code_b
+       else if ib == -1
+       then code_a
+       else let (pa, pb) = ({x=loca / h, y=loca % h}, {x=locb / h, y=locb % h})
+            let (ta, tb) = unsafe (triangles_projected[ia], triangles_projected[ib])
+            let (bary_a, bary_b) = (barycentric_coordinates pa ta,
+                                    barycentric_coordinates pb tb)
+            let (z_a, z_b) = (interpolate_z ta bary_a, interpolate_z tb bary_b)
+            in if z_a < z_b
+               then code_a
+               else code_b
+
+  let pixel_color (code: i64): u32 =
+    let (loc, i) = decode_loc_and_ix code
+    let p = {x=loc / h, y=loc % h}
+    in if i == -1
+       then 0x00000000
+       else
+       let (t, s) = unsafe (triangles_projected[i], surfaces[i])
+       let bary = barycentric_coordinates p t
+       let z = interpolate_z t bary
+       in let color = color_point surface_textures s z bary
+          in rgb_to_pixel (hsv_to_rgb color)
+
+  let pixels = replicate (w * h) empty_code
+  let pixels' = reduce_by_index pixels update empty_code indices points''
+  let pixels'' = map pixel_color pixels'
+  in unflatten w h pixels''
+
 let render_triangles_in_view
   [texture_h][texture_w]
   (render_approach: render_approach_id)
@@ -338,13 +373,15 @@ let render_triangles_in_view
      close_enough_dist triangle.3) &&
     !(close_enough_fully_out_of_frame triangle)
 
-  let triangles_close = filter (\(t, _s) -> close_enough t)
+  let triangles_close = filter (close_enough <-< (.1))
                                (zip triangles_projected surfaces)
   let (triangles_projected', surfaces') = unzip triangles_close
 
   in if render_approach == 1
+     then render_triangles_segmented triangles_projected' surfaces' surface_textures w h
+     else if render_approach == 2
      then render_triangles_chunked triangles_projected' surfaces'
                                    surface_textures w h n_draw_rects
-     else if render_approach == 2
+     else if render_approach == 3
      then render_triangles_scatter_bbox triangles_projected' surfaces' surface_textures w h
      else replicate w (replicate h 0u32) -- error

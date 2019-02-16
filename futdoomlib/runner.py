@@ -24,11 +24,13 @@ class Doom:
         self.scale_to = scale_to
         self.render_approach = render_approach
         if render_approach is None:
-            render_approach = 'chunked'
+            render_approach = 'segmented'
         self.auto_fps = auto_fps
         self.size = (640, 360)
         self.view_dist = 400.0
-        self.draw_dist = 2000.0
+        self.draw_dist = 20000.0
+        if render_approach != 'segmented':
+            self.draw_dist /= 10 # The others are really that much slower.
         self.n_draw_rects = [1, 1]
 
     def run(self):

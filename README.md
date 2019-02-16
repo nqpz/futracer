@@ -7,8 +7,9 @@ Run `make` to build the library, and then run `./futcubes.py`,
 `./futfly.py`, or `./futdoom.py` to run the example programs.  Use the
 `--help` argument to see which settings exist.
 
-There are two rendering approaches: `chunked` (the default) and
-`scatter_bbox`.  Both are pretty slow, but `chunked` is faster.
+There are three rendering approaches: `segmented` (the default) `chunked`, and
+`scatter_bbox`.  The `segmented` approach is a rasterizer, while
+`chunked` and `scatter_bbox` are raycasters.
 
 *Click on the image to see a 1-minute video of `futcubes.py` in action.*
 [![Video of futcubes](https://hongabar.org/~niels/futracer/futracer-textured-image.jpg)](https://hongabar.org/~niels/futracer/futracer-textured.webm)

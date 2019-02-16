@@ -20,10 +20,12 @@ class FutFly:
             size = (800, 600)
         self.size = size
         if render_approach is None:
-            render_approach = 'chunked'
+            render_approach = 'segmented'
         self.render_approach = render_approach
         self.view_dist = 600.0
-        self.draw_dist = 2000.0
+        self.draw_dist = 20000.0
+        if render_approach != 'segmented':
+            self.draw_dist /= 10 # The others are really that much slower.
         self.n_draw_rects = [1, 1]
 
     def fly(self):
@@ -240,7 +242,7 @@ def main(args):
                             help='set the size of the racing game window')
     arg_parser.add_argument('--render-approach',
                             choices=futracer.render_approaches,
-                            default='chunked',
+                            default='segmented',
                             help='choose how to render a frame')
 
     args = arg_parser.parse_args(args)

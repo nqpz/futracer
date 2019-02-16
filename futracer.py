@@ -10,8 +10,9 @@ import futracerlib
 
 
 render_approaches_map = {
-    'chunked': 1,
-    'scatter_bbox': 2,
+    'segmented': 1,
+    'chunked': 2,
+    'scatter_bbox': 3,
 }
 render_approaches = list(render_approaches_map.keys())
 
@@ -135,7 +136,7 @@ class FutRacer:
 
     def render_triangles_preprocessed(self, size, view_dist, draw_dist, camera,
                                       triangles_pre, textures_pre,
-                                      render_approach='chunked',
+                                      render_approach='segmented',
                                       n_draw_rects=(1, 1)):
         w, h = size
 
@@ -161,7 +162,7 @@ class FutRacer:
     def render_triangles(self, size, view_dist, draw_dist, camera,
                          triangles, triangles_pre,
                          textures, textures_pre,
-                         render_approach='chunked',
+                         render_approach='segmented',
                          n_draw_rects=(1, 1)):
         if triangles is None:
             triangles_pre1 = triangles_pre

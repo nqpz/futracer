@@ -23,10 +23,12 @@ class FutCubes:
         self.n_cubes = n_cubes
         self.just_colors = just_colors
         if render_approach is None:
-            render_approach = 'chunked'
+            render_approach = 'segmented'
         self.render_approach = render_approach
         self.view_dist = 600.0
-        self.draw_dist = 800.0
+        self.draw_dist = 8000.0
+        if render_approach != 'segmented':
+            self.draw_dist /= 10 # The others are really that much slower.
         self.n_draw_rects = [1, 1]
 
     def run(self):
@@ -240,7 +242,7 @@ def main(args):
                             help='use random colors instead of the pretty texture')
     arg_parser.add_argument('--render-approach',
                             choices=futracer.render_approaches,
-                            default='chunked',
+                            default='segmented',
                             help='choose how to render a frame')
 
     args = arg_parser.parse_args(args)

@@ -13,7 +13,7 @@ def main(futracer, args):
                             help='scale the frames to this size when showing them')
     arg_parser.add_argument('--render-approach',
                             choices=futracer.render_approaches,
-                            default='chunked',
+                            default='segmented',
                             help='choose how to render a frame')
     arg_parser.add_argument('--auto-fps',
                             action='store_true',
