@@ -93,7 +93,7 @@ let color_point
          -- FIXME: This results in a slightly distorted image, as it is based on
          -- the projected triangle, not the actual triangle.  This is fine for
          -- small triangles, but noticable for large triangles.
-         let {x=an, y=bn, z=cn} = bary.3
+         let {x=an, y=bn, z=cn} = bary.2
          let yn = an * yn0 + bn * yn1 + cn * yn2
          let xn = an * xn0 + bn * xn1 + cn * xn2
          let yi = t32 (yn * r32 texture_h)
@@ -187,12 +187,12 @@ let render_triangles_chunked
       unsafe unzip (filter (\(t, _) -> triangle_in_rect rect t) (zip triangles_projected surfaces))
     in unsafe map (each_pixel rect_triangles_projected rect_surfaces) pixel_indices
 
-  let rect_pixel_indices
-    (({x=x0, y=y0}, {x=x1, y=y1}): rectangle): []i32 =
+  let rect_pixel_indices (totallen: i32)
+    (({x=x0, y=y0}, {x=x1, y=y1}): rectangle): [totallen]i32 =
     let (xlen, ylen) = (x1 - x0, y1 - y0)
     let xs = map (+ x0) (iota xlen)
     let ys = map (+ y0) (iota ylen)
-    in flatten (map (\x -> map (\y -> x * h + y) ys) xs)
+    in flatten (map (\x -> map (\y -> x * h + y) ys) xs) :> [totallen]i32
 
   in if n_rects_x == 1 && n_rects_y == 1
      then
@@ -205,19 +205,21 @@ let render_triangles_chunked
      -- the end.
      let x_size = w / n_rects_x + i32.bool (w % n_rects_x > 0)
      let y_size = h / n_rects_y + i32.bool (h % n_rects_y > 0)
+     let n_total = n_rects_y * n_rects_x
      let rects = flatten (map (\x -> map (\y ->
                                             let x0 = x * x_size
                                             let y0 = y * y_size
                                             let x1 = x0 + x_size
                                             let y1 = y0 + y_size
                                             in ({x=x0, y=y0}, {x=x1, y=y1}))
-                                         (iota n_rects_y)) (iota n_rects_x))
+                                         (iota n_rects_y)) (iota n_rects_x)) :> [n_total]rectangle
 
-     let pixel_indicess = unsafe map rect_pixel_indices rects
+     let pixel_indicess = unsafe map (rect_pixel_indices (x_size * y_size)) rects
      let pixelss = map2 each_rect rects pixel_indicess
      let pixel_indices = flatten pixel_indicess
-     let pixels = flatten pixelss
-     let pixel_indices' = map (\i -> if i < w * h then i else -1) pixel_indices
+     let n = length pixel_indices
+     let pixels = flatten pixelss :> [n]u32
+     let pixel_indices' = map (\i -> if i < w * h then i else -1) pixel_indices :> [n]i32
      let frame = replicate (w * h) 0u32
      let frame' = scatter frame pixel_indices' pixels
      in unflatten w h frame'
@@ -368,12 +370,12 @@ let render_triangles_in_view
     (y0 < 0 && y1 < 0 && y2 < 0) || (y0 >= h && y1 >= h && y2 >= h)
 
   let close_enough (triangle: triangle_projected): bool =
-    (close_enough_dist triangle.1 ||
-     close_enough_dist triangle.2 ||
-     close_enough_dist triangle.3) &&
+    (close_enough_dist triangle.0 ||
+     close_enough_dist triangle.1 ||
+     close_enough_dist triangle.2) &&
     !(close_enough_fully_out_of_frame triangle)
 
-  let triangles_close = filter (close_enough <-< (.1))
+  let triangles_close = filter (close_enough <-< (.0))
                                (zip triangles_projected surfaces)
   let (triangles_projected', surfaces') = unzip triangles_close
 

@@ -19,5 +19,5 @@ type surface = (surface_type, hsv, i32)
 -- A double texture contains two textures: one in the upper left triangle, and
 -- one (backwards) in the lower right triangle.  Use `texture_index / 2` to
 -- refer to the correct double texture.
-type surface_double_texture = [][]hsv
+type~ surface_double_texture = [][]hsv
 type triangle_with_surface = (triangle, surface)
