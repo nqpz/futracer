@@ -81,7 +81,7 @@ let color_point
     then s_hsv
     else if s_t == 2
     -- Use the texture index.
-    then let double_tex = unsafe surface_textures[s_ti / 2]
+    then let double_tex = #[unsafe] surface_textures[s_ti / 2]
          let ((xn0, yn0), (xn1, yn1), (xn2, yn2)) =
            if s_ti & 1 == 0
            then ((0.0, 0.0),
@@ -100,7 +100,7 @@ let color_point
          let xi = t32 (xn * r32 texture_w)
          let yi' = clamp yi 0 (texture_h - 1)
          let xi' = clamp xi 0 (texture_w - 1)
-         in unsafe double_tex[yi', xi']
+         in #[unsafe] double_tex[yi', xi']
     else (0.0, 0.0, 0.0) -- unsupported input
   let flashlight_brightness = 2.0 * 10.0**6.0
   let v_factor = f32.min 1.0 (flashlight_brightness
@@ -184,8 +184,8 @@ let render_triangles_chunked
     (rect: rectangle)
     (pixel_indices: [bn]i32): [bn]pixel =
     let (rect_triangles_projected, rect_surfaces) =
-      unsafe unzip (filter (\(t, _) -> triangle_in_rect rect t) (zip triangles_projected surfaces))
-    in unsafe map (each_pixel rect_triangles_projected rect_surfaces) pixel_indices
+      #[unsafe] unzip (filter (\(t, _) -> triangle_in_rect rect t) (zip triangles_projected surfaces))
+    in #[unsafe] map (each_pixel rect_triangles_projected rect_surfaces) pixel_indices
 
   let rect_pixel_indices (totallen: i32)
     (({x=x0, y=y0}, {x=x1, y=y1}): rectangle): [totallen]i32 =
@@ -198,7 +198,7 @@ let render_triangles_chunked
      then
      -- Keep it simple.  This will be a redomap.
      let pixel_indices = iota (w * h)
-     let pixels = unsafe map (each_pixel triangles_projected surfaces) pixel_indices
+     let pixels = #[unsafe] map (each_pixel triangles_projected surfaces) pixel_indices
      in unflatten w h pixels
      else
      -- Split into rectangles, each with their own triangles, and use scatter in
@@ -214,7 +214,7 @@ let render_triangles_chunked
                                             in ({x=x0, y=y0}, {x=x1, y=y1}))
                                          (iota n_rects_y)) (iota n_rects_x)) :> [n_total]rectangle
 
-     let pixel_indicess = unsafe map (rect_pixel_indices (x_size * y_size)) rects
+     let pixel_indicess = #[unsafe] map (rect_pixel_indices (x_size * y_size)) rects
      let pixelss = map2 each_rect rects pixel_indicess
      let pixel_indices = flatten pixel_indicess
      let n = length pixel_indices
@@ -267,7 +267,7 @@ let render_triangles_scatter_bbox
                                    (map (+ x_left) (iota x_span)))
     let indices = map (\{x, y} -> x * h + y) coordinates
 
-    let z_values_cur = map (\i -> unsafe z_values[i]) indices
+    let z_values_cur = map (\i -> #[unsafe] z_values[i]) indices
 
     let barys_new = map (\(p: i32racer.point2D): point_barycentric ->
                            barycentric_coordinates p triangle_projected)
@@ -319,7 +319,7 @@ let render_triangles_segmented
        else if ib == -1
        then code_a
        else let (pa, pb) = ({x=loca / h, y=loca % h}, {x=locb / h, y=locb % h})
-            let (ta, tb) = unsafe (triangles_projected[ia], triangles_projected[ib])
+            let (ta, tb) = #[unsafe] (triangles_projected[ia], triangles_projected[ib])
             let (bary_a, bary_b) = (barycentric_coordinates pa ta,
                                     barycentric_coordinates pb tb)
             let (z_a, z_b) = (interpolate_z ta bary_a, interpolate_z tb bary_b)
@@ -333,7 +333,7 @@ let render_triangles_segmented
     in if i == -1
        then 0x00000000
        else
-       let (t, s) = unsafe (triangles_projected[i], surfaces[i])
+       let (t, s) = #[unsafe] (triangles_projected[i], surfaces[i])
        let bary = barycentric_coordinates p t
        let z = interpolate_z t bary
        in let color = color_point surface_textures s z bary
