@@ -3,8 +3,6 @@ import colorsys
 
 import numpy
 import png
-import pyopencl as cl
-import pyopencl.array
 
 import futracerlib
 
@@ -49,17 +47,8 @@ class FutRacer:
         return [self.rotate_point(angles, origo, p)
                 for p in triangle[:3]] + triangle[3:]
 
-    def to_device(self, xs, typ):
-        # This is VERY brittle.  It must change whenever futhark-pyopencl
-        # changes.
-        xs_np = numpy.fromiter(xs, dtype=typ)
-        xs_mem = cl.Buffer(self.futhark.ctx, cl.mem_flags.READ_WRITE,
-                        numpy.long(numpy.int64(4) * xs_np.shape[0]))
-        cl.enqueue_copy(self.futhark.queue, xs_mem, xs_np,
-                        is_blocking=False)
-        xs = cl.array.Array(self.futhark.queue, xs_np.shape, typ,
-                            data=xs_mem)
-        return xs
+    def to_numpy(self, xs, typ):
+        return numpy.fromiter(xs, dtype=typ)
 
     def preprocess_triangles(self, triangles):
         p0s = [t[0] for t in triangles]
@@ -67,23 +56,23 @@ class FutRacer:
         p2s = [t[2] for t in triangles]
         ss = [t[3] for t in triangles]
 
-        x0s = self.to_device((p[0] for p in p0s), 'float32')
-        y0s = self.to_device((p[1] for p in p0s), 'float32')
-        z0s = self.to_device((p[2] for p in p0s), 'float32')
+        x0s = self.to_numpy((p[0] for p in p0s), 'float32')
+        y0s = self.to_numpy((p[1] for p in p0s), 'float32')
+        z0s = self.to_numpy((p[2] for p in p0s), 'float32')
 
-        x1s = self.to_device((p[0] for p in p1s), 'float32')
-        y1s = self.to_device((p[1] for p in p1s), 'float32')
-        z1s = self.to_device((p[2] for p in p1s), 'float32')
+        x1s = self.to_numpy((p[0] for p in p1s), 'float32')
+        y1s = self.to_numpy((p[1] for p in p1s), 'float32')
+        z1s = self.to_numpy((p[2] for p in p1s), 'float32')
 
-        x2s = self.to_device((p[0] for p in p2s), 'float32')
-        y2s = self.to_device((p[1] for p in p2s), 'float32')
-        z2s = self.to_device((p[2] for p in p2s), 'float32')
+        x2s = self.to_numpy((p[0] for p in p2s), 'float32')
+        y2s = self.to_numpy((p[1] for p in p2s), 'float32')
+        z2s = self.to_numpy((p[2] for p in p2s), 'float32')
 
-        s_types = self.to_device((s[0] for s in ss), 'int32')
-        s_hsv_hs = self.to_device((s[1][0] for s in ss), 'float32')
-        s_hsv_ss = self.to_device((s[1][1] for s in ss), 'float32')
-        s_hsv_vs = self.to_device((s[1][2] for s in ss), 'float32')
-        s_indices = self.to_device((s[2] for s in ss), 'int64')
+        s_types = self.to_numpy((s[0] for s in ss), 'int32')
+        s_hsv_hs = self.to_numpy((s[1][0] for s in ss), 'float32')
+        s_hsv_ss = self.to_numpy((s[1][1] for s in ss), 'float32')
+        s_hsv_vs = self.to_numpy((s[1][2] for s in ss), 'float32')
+        s_indices = self.to_numpy((s[2] for s in ss), 'int32')
 
         return (x0s, y0s, z0s, x1s, y1s, z1s, x2s, y2s, z2s,
                 s_types, s_hsv_hs, s_hsv_ss, s_hsv_vs, s_indices)
@@ -115,17 +104,17 @@ class FutRacer:
             s_textures_hs_flat = numpy.reshape(
                 s_textures_hs,
                 len(textures) * texture_h * texture_w)
-            s_textures_hs_flat = self.to_device(s_textures_hs_flat, 'float32')
+            s_textures_hs_flat = self.to_numpy(s_textures_hs_flat, 'float32')
             s_textures_ss = s_textures[:,:,:,1]
             s_textures_ss_flat = numpy.reshape(
                 s_textures_ss,
                 len(textures) * texture_h * texture_w).astype('float32')
-            s_textures_ss_flat = self.to_device(s_textures_ss_flat, 'float32')
+            s_textures_ss_flat = self.to_numpy(s_textures_ss_flat, 'float32')
             s_textures_vs = s_textures[:,:,:,2]
             s_textures_vs_flat = numpy.reshape(
                 s_textures_vs,
                 len(textures) * texture_h * texture_w).astype('float32')
-            s_textures_vs_flat = self.to_device(s_textures_vs_flat, 'float32')
+            s_textures_vs_flat = self.to_numpy(s_textures_vs_flat, 'float32')
         else:
             s_textures_hs_flat = numpy.empty((0,)).astype('float32')
             s_textures_ss_flat = numpy.empty((0,)).astype('float32')
@@ -168,7 +157,7 @@ class FutRacer:
             triangles_pre1 = triangles_pre
         else:
             triangles_pre0 = self.preprocess_triangles(triangles)
-            triangles_pre1 = [pyopencl.array.concatenate((x, y))
+            triangles_pre1 = [numpy.array.concatenate((x, y))
                               for x, y in zip(triangles_pre0, triangles_pre)]
         if textures is None:
             textures_pre1 = textures_pre
@@ -181,7 +170,7 @@ class FutRacer:
             assert p0_h == p_h
             textures_pre0_arrays = textures_pre0[3:]
             textures_pre_arrays = textures_pre[3:]
-            triangles_pre1_arrays = [pyopencl.array.concatenate((x, y))
+            triangles_pre1_arrays = [numpy.array.concatenate((x, y))
                               for x, y in zip(textures_pre0_arrays, textures_pre_arrays)]
             triangles_pre1 = [length, p0_w, p0_h] + triangles_pre1_arrays
         return self.render_triangles_preprocessed(
