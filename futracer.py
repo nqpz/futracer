@@ -54,7 +54,7 @@ class FutRacer:
         # changes.
         xs_np = numpy.fromiter(xs, dtype=typ)
         xs_mem = cl.Buffer(self.futhark.ctx, cl.mem_flags.READ_WRITE,
-                        numpy.long(numpy.int32(4) * xs_np.shape[0]))
+                        numpy.long(numpy.int64(4) * xs_np.shape[0]))
         cl.enqueue_copy(self.futhark.queue, xs_mem, xs_np,
                         is_blocking=False)
         xs = cl.array.Array(self.futhark.queue, xs_np.shape, typ,
@@ -83,7 +83,7 @@ class FutRacer:
         s_hsv_hs = self.to_device((s[1][0] for s in ss), 'float32')
         s_hsv_ss = self.to_device((s[1][1] for s in ss), 'float32')
         s_hsv_vs = self.to_device((s[1][2] for s in ss), 'float32')
-        s_indices = self.to_device((s[2] for s in ss), 'int32')
+        s_indices = self.to_device((s[2] for s in ss), 'int64')
 
         return (x0s, y0s, z0s, x1s, y1s, z1s, x2s, y2s, z2s,
                 s_types, s_hsv_hs, s_hsv_ss, s_hsv_vs, s_indices)

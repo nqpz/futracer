@@ -96,10 +96,10 @@ let color_point
          let {x=an, y=bn, z=cn} = bary.2
          let yn = an * yn0 + bn * yn1 + cn * yn2
          let xn = an * xn0 + bn * xn1 + cn * xn2
-         let yi = t32 (yn * r32 texture_h)
-         let xi = t32 (xn * r32 texture_w)
-         let yi' = clamp yi 0 (texture_h - 1)
-         let xi' = clamp xi 0 (texture_w - 1)
+         let yi = t32 (yn * f32.i64 texture_h)
+         let xi = t32 (xn * f32.i64 texture_w)
+         let yi' = clamp yi 0 (i32.i64 texture_h - 1)
+         let xi' = clamp xi 0 (i32.i64 texture_w - 1)
          in #[unsafe] double_tex[yi', xi']
     else (0.0, 0.0, 0.0) -- unsupported input
   let flashlight_brightness = 2.0 * 10.0**6.0
@@ -112,15 +112,15 @@ let render_triangles_chunked
   (triangles_projected: [tn]triangle_projected)
   (surfaces: [tn]surface)
   (surface_textures: [][texture_h][texture_w]hsv)
-  (w: i32) (h: i32)
+  (w: i64) (h: i64)
   ((n_rects_x, n_rects_y): (i32, i32))
   : [w][h]pixel =
   let each_pixel
     [rtpn]
     (rect_triangles_projected: [rtpn]triangle_projected)
     (rect_surfaces: []surface)
-    (pixel_index: i32): pixel =
-    let p = {x=pixel_index / h, y=pixel_index % h}
+    (pixel_index: i64): pixel =
+    let p = {x=i32.i64 (pixel_index / h), y=i32.i64 (pixel_index % h)}
     let each_triangle
       (t: triangle_projected)
       (i: i32)
@@ -146,7 +146,7 @@ let render_triangles_chunked
       then (true, z0, i0) -- Just pick one of them.
       else neutral_info
 
-    let triangles_infos = map2 each_triangle rect_triangles_projected (0..<rtpn)
+    let triangles_infos = map2 each_triangle rect_triangles_projected (map i32.i64 (0..<rtpn))
     let (_in_triangle, z, i) =
       reduce_comm merge_colors neutral_info triangles_infos
     let color = if i == -1
@@ -182,17 +182,17 @@ let render_triangles_chunked
   let each_rect
     [bn]
     (rect: rectangle)
-    (pixel_indices: [bn]i32): [bn]pixel =
+    (pixel_indices: [bn]i64): [bn]pixel =
     let (rect_triangles_projected, rect_surfaces) =
       #[unsafe] unzip (filter (\(t, _) -> triangle_in_rect rect t) (zip triangles_projected surfaces))
     in #[unsafe] map (each_pixel rect_triangles_projected rect_surfaces) pixel_indices
 
-  let rect_pixel_indices (totallen: i32)
-    (({x=x0, y=y0}, {x=x1, y=y1}): rectangle): [totallen]i32 =
+  let rect_pixel_indices (totallen: i64)
+    (({x=x0, y=y0}, {x=x1, y=y1}): rectangle): [totallen]i64 =
     let (xlen, ylen) = (x1 - x0, y1 - y0)
-    let xs = map (+ x0) (iota xlen)
-    let ys = map (+ y0) (iota ylen)
-    in flatten (map (\x -> map (\y -> x * h + y) ys) xs) :> [totallen]i32
+    let xs = map (+ x0) (map i32.i64 (iota (i64.i32 xlen)))
+    let ys = map (+ y0) (map i32.i64 (iota (i64.i32 ylen)))
+    in flatten (map (\x -> map (\y -> i64.i32 x * h + i64.i32 y) ys) xs) :> [totallen]i64
 
   in if n_rects_x == 1 && n_rects_y == 1
      then
@@ -203,23 +203,26 @@ let render_triangles_chunked
      else
      -- Split into rectangles, each with their own triangles, and use scatter in
      -- the end.
-     let x_size = w / n_rects_x + i32.bool (w % n_rects_x > 0)
-     let y_size = h / n_rects_y + i32.bool (h % n_rects_y > 0)
-     let n_total = n_rects_y * n_rects_x
+     let x_size = i32.i64 w / n_rects_x + i32.bool (i32.i64 w % n_rects_x > 0)
+     let y_size = i32.i64 h / n_rects_y + i32.bool (i32.i64 h % n_rects_y > 0)
+     let n_total = i64.i32 (n_rects_y * n_rects_x)
+     let n_rects_y' = i64.i32 n_rects_y
+     let n_rects_x' = i64.i32 n_rects_x
      let rects = flatten (map (\x -> map (\y ->
-                                            let x0 = x * x_size
-                                            let y0 = y * y_size
+                                            let x0 = i32.i64 x * x_size
+                                            let y0 = i32.i64 y * y_size
                                             let x1 = x0 + x_size
                                             let y1 = y0 + y_size
                                             in ({x=x0, y=y0}, {x=x1, y=y1}))
-                                         (iota n_rects_y)) (iota n_rects_x)) :> [n_total]rectangle
+                                         (0..<n_rects_y'))
+                              (0..<n_rects_x')) :> [n_total]rectangle
 
-     let pixel_indicess = #[unsafe] map (rect_pixel_indices (x_size * y_size)) rects
+     let pixel_indicess = #[unsafe] map (rect_pixel_indices (i64.i32 (x_size * y_size))) rects
      let pixelss = map2 each_rect rects pixel_indicess
      let pixel_indices = flatten pixel_indicess
      let n = length pixel_indices
      let pixels = flatten pixelss :> [n]u32
-     let pixel_indices' = map (\i -> if i < w * h then i else -1) pixel_indices :> [n]i32
+     let pixel_indices' = map (\i -> if i < w * h then i else -1) pixel_indices :> [n]i64
      let frame = replicate (w * h) 0u32
      let frame' = scatter frame pixel_indices' pixels
      in unflatten w h frame'
@@ -229,23 +232,24 @@ let render_triangles_scatter_bbox
   (triangles_projected: [tn]triangle_projected)
   (surfaces: [tn]surface)
   (surface_textures: [][texture_h][texture_w]hsv)
-  (w: i32) (h: i32)
+  (w: i64) (h: i64)
   : [w][h]pixel =
   let bounding_box
     (({x=x0, y=y0, z=_z0}, {x=x1, y=y1, z=_z1}, {x=x2, y=y2, z=_z2}): triangle_projected)
     : rectangle =
+    let (w, h) = (i32.i64 w, i32.i64 h) in
     ({x=within_bounds 0i32 (w - 1) (i32.min (i32.min x0 x1) x2),
       y=within_bounds 0i32 (h - 1) (i32.min (i32.min y0 y1) y2)},
      {x=within_bounds 0i32 (w - 1) (i32.max (i32.max x0 x1) x2),
       y=within_bounds 0i32 (h - 1) (i32.max (i32.max y0 y1) y2)})
 
   let merge_colors
-    (i: i32)
+    (i: i64)
     (z_cur: f32)
     (p_new: pixel)
     (z_new: f32)
     (in_triangle_new: bool)
-    : (i32, pixel, f32) =
+    : (i64, pixel, f32) =
     if in_triangle_new && z_new >= 0.0 && (z_cur < 0.0 || z_new < z_cur)
     then (i, p_new, z_new)
     else (-1, 0u32, 0.0f32)
@@ -260,12 +264,12 @@ let render_triangles_scatter_bbox
 
     let ({x=x_left, y=y_top}, {x=x_right, y=y_bottom}) =
       bounding_box triangle_projected
-    let x_span = x_right - x_left + 1
-    let y_span = y_bottom - y_top + 1
+    let x_span = i64.i32 (x_right - x_left + 1)
+    let y_span = i64.i32 (y_bottom - y_top + 1)
     let coordinates = flatten (map (\x -> map (\y -> {x, y})
-                                              (map (+ y_top) (iota y_span)))
-                                   (map (+ x_left) (iota x_span)))
-    let indices = map (\{x, y} -> x * h + y) coordinates
+                                              (map (+ y_top) (map i32.i64 (iota y_span))))
+                                   (map (+ x_left) (map i32.i64 (iota x_span))))
+    let indices = map (\{x, y} -> i64.i32 x * h + i64.i32 y) coordinates
 
     let z_values_cur = map (\i -> #[unsafe] z_values[i]) indices
 
@@ -291,24 +295,25 @@ let render_triangles_scatter_bbox
   let frame' = unflatten w h pixels
   in frame'
 
-let encode_loc_and_ix (loc: i32) (ix: i32): i64 =
-  (i64.i32 loc << 32) | i64.i32 ix
+let encode_loc_and_ix (loc: i32) (ix: i64): i64 =
+  (i64.i32 loc << 32) | ix -- Let's hope it's within 32 bits.
 
-let decode_loc_and_ix (code: i64): (i32, i32) =
-  (i32.i64 (code >> 32), i32.i64 code)
+let decode_loc_and_ix (code: i64): (i32, i64) =
+  (i32.i64 (code >> 32), code & 0x00000000ffffffff)
 
 let render_triangles_segmented
   [tn][texture_w][texture_h]
   (triangles_projected: [tn]triangle_projected)
   (surfaces: [tn]surface)
   (surface_textures: [][texture_h][texture_w]hsv)
-  (w: i32) (h: i32)
+  (w: i64) (h: i64)
   : [w][h]pixel =
+  let (w', h') = (i32.i64 w, i32.i64 h)
   let lines = lines_of_triangles triangles_projected
   let points = points_of_lines lines
-  let points' = filter (\({x, y}, _) -> x >= 0 && x < w && y >=0 && y < h) points
-  let indices = map (\({x, y}, _) -> x * h + y) points'
-  let points'' = map (\({x, y}, ix) -> encode_loc_and_ix (x * h + y) ix) points'
+  let points' = filter (\({x, y}, _) -> x >= 0 && x < w' && y >=0 && y < h') points
+  let indices = map (\({x, y}, _) -> i64.i32 x * h + i64.i32 y) points'
+  let points'' = map (\({x, y}, ix) -> encode_loc_and_ix (x * i32.i64 h + y) ix) points'
   let empty_code = encode_loc_and_ix (-1) (-1)
 
   let update (code_a: i64) (code_b: i64): i64 =
@@ -318,7 +323,7 @@ let render_triangles_segmented
        then code_b
        else if ib == -1
        then code_a
-       else let (pa, pb) = ({x=loca / h, y=loca % h}, {x=locb / h, y=locb % h})
+       else let (pa, pb) = ({x=loca / h', y=loca % h'}, {x=locb / h', y=locb % h'})
             let (ta, tb) = #[unsafe] (triangles_projected[ia], triangles_projected[ib])
             let (bary_a, bary_b) = (barycentric_coordinates pa ta,
                                     barycentric_coordinates pb tb)
@@ -329,7 +334,7 @@ let render_triangles_segmented
 
   let pixel_color (code: i64): u32 =
     let (loc, i) = decode_loc_and_ix code
-    let p = {x=loc / h, y=loc % h}
+    let p = {x=loc / h', y=loc % h'}
     in if i == -1
        then 0x00000000
        else
@@ -351,14 +356,15 @@ let render_triangles_in_view
   (camera: camera)
   (triangles_with_surfaces: []triangle_with_surface)
   (surface_textures: [][texture_h][texture_w]hsv)
-  (w: i32) (h: i32)
+  (w: i64) (h: i64)
   (view_dist: f32)
   (draw_dist: f32)
   : [w][h]pixel =
+  let (w', h') = (i32.i64 w, i32.i64 h)
   let (triangles, surfaces) = unzip triangles_with_surfaces
   let triangles_normalized = map (normalize_triangle camera)
                                  triangles
-  let triangles_projected = map (project_triangle w h view_dist)
+  let triangles_projected = map (project_triangle w' h' view_dist)
                                 triangles_normalized
 
   let close_enough_dist ({x=_, y=_, z}: point_projected): bool =
@@ -366,8 +372,8 @@ let render_triangles_in_view
 
   let close_enough_fully_out_of_frame
     (({x=x0, y=y0, z=_z0}, {x=x1, y=y1, z=_z1}, {x=x2, y=y2, z=_z2}): triangle_projected): bool =
-    (x0 < 0 && x1 < 0 && x2 < 0) || (x0 >= w && x1 >= w && x2 >= w) ||
-    (y0 < 0 && y1 < 0 && y2 < 0) || (y0 >= h && y1 >= h && y2 >= h)
+    (x0 < 0 && x1 < 0 && x2 < 0) || (x0 >= w' && x1 >= w' && x2 >= w') ||
+    (y0 < 0 && y1 < 0 && y2 < 0) || (y0 >= h' && y1 >= h' && y2 >= h')
 
   let close_enough (triangle: triangle_projected): bool =
     (close_enough_dist triangle.0 ||
