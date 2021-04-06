@@ -1,5 +1,6 @@
 import "futracerlib/color"
 import "futracerlib/transformations"
+import "futracerlib/render_types"
 import "futracerlib/render"
 
 entry rotate_point_raw
